@@ -4,7 +4,7 @@ AetherLab Python SDK
 The official Python SDK for AetherLab's AI Guardrails and Compliance Platform.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.1.2"
 
 from .client import AetherLabClient
 from .exceptions import (
@@ -32,4 +32,4 @@ __all__ = [
     "GuardrailLog",
     "MediaComplianceResult",
     "SecureMarkResult",
-]
+] 
