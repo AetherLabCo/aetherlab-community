@@ -26,9 +26,14 @@ setup(
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
+        "Intended Audience :: Science/Research",
+        "Intended Audience :: Information Technology",
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
         "Topic :: Software Development :: Quality Assurance",
+        "Topic :: Security",
+        "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
+        "Topic :: Text Processing :: Linguistic",
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.8",
@@ -37,6 +42,8 @@ setup(
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
         "Operating System :: OS Independent",
+        "Natural Language :: English",
+        "Typing :: Typed",
     ],
     python_requires=">=3.8",
     install_requires=[
@@ -55,5 +62,5 @@ setup(
             "wheel>=0.38.0",
         ],
     },
-    keywords="aetherlab ai guardrails compliance safety llm security",
+    keywords="aetherlab ai guardrails compliance safety llm security content-moderation prompt-injection ai-safety chatbot-safety ml-security artificial-intelligence machine-learning nlp openai anthropic gpt claude gemini mistral llama ai-governance responsible-ai",
 ) 

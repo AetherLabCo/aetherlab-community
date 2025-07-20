@@ -7,10 +7,7 @@ Official SDKs and examples for the AetherLab AI Guardrails and Compliance Platfo
 ### Python SDK
 
 ```bash
-# Install from TestPyPI (current)
-pip install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ aetherlab
-
-# Install from PyPI (coming soon)
+# Install from PyPI
 pip install aetherlab
 ```
 
@@ -119,8 +116,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - [AetherLab Website](https://aetherlab.ai)
 - [Documentation](https://docs.aetherlab.ai)
-- [PyPI Package](https://pypi.org/project/aetherlab/) (coming soon)
-- [TestPyPI Package](https://test.pypi.org/project/aetherlab/)
+- [PyPI Package](https://pypi.org/project/aetherlab/)
+- [GitHub Repository](https://github.com/AetherLabCo/aetherlab-community)
 
 ## 💬 Support
 

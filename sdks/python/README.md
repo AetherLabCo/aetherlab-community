@@ -1,6 +1,11 @@
 # AetherLab Python SDK
 
-The official Python SDK for AetherLab's AI Guardrails and Compliance Platform.
+[![PyPI version](https://badge.fury.io/py/aetherlab.svg)](https://pypi.org/project/aetherlab/)
+[![Python Versions](https://img.shields.io/pypi/pyversions/aetherlab.svg)](https://pypi.org/project/aetherlab/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Downloads](https://pepy.tech/badge/aetherlab)](https://pepy.tech/project/aetherlab)
+
+The official Python SDK for AetherLab's AI Guardrails and Compliance Platform. Build safer AI applications with real-time content moderation, prompt injection detection, and comprehensive compliance monitoring.
 
 ## Installation
 
