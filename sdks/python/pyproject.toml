@@ -26,7 +26,13 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Operating System :: OS Independent",
 ]
-keywords = ["aetherlab", "ai", "guardrails", "compliance", "safety", "llm", "security"]
+keywords = [
+    "aetherlab", "ai", "guardrails", "compliance", "safety", "llm", "security",
+    "content-moderation", "prompt-injection", "ai-safety", "chatbot-safety",
+    "ml-security", "artificial-intelligence", "machine-learning", "nlp",
+    "openai", "anthropic", "gpt", "claude", "gemini", "mistral", "llama",
+    "ai-governance", "responsible-ai", "prompt-engineering", "ai-monitoring"
+]
 dependencies = [
     "requests>=2.28.0",
     "urllib3>=1.26.0",
