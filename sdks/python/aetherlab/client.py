@@ -98,7 +98,7 @@ class AetherLabClient:
     
     def validate_content(
         self,
-        content: str,
+        content: Optional[str] = None,
         content_type: Optional[str] = None,
         desired_attributes: Optional[List[str]] = None,
         prohibited_attributes: Optional[List[str]] = None,
@@ -110,8 +110,8 @@ class AetherLabClient:
         Validate content for compliance (new API that wraps test_prompt).
         
         Args:
-            content: The content to validate
-            content_type: Type of content (e.g., "financial_advice", "marketing_copy")
+            content: The content to validate (optional, defaults to empty string)
+            content_type: Type of content (e.g., "financial_advice", "marketing_copy") (optional)
             desired_attributes: List of attributes the content should have
             prohibited_attributes: List of attributes the content should not have
             context: Additional context for validation
@@ -129,6 +129,10 @@ class AetherLabClient:
             ...     prohibited_attributes=["guaranteed returns", "unlicensed advice"]
             ... )
         """
+        # Handle optional content parameter
+        if content is None:
+            content = ""
+        
         # Map new parameter names to old API
         result = self.test_prompt(
             user_prompt=content,
