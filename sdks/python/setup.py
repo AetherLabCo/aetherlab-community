@@ -10,7 +10,7 @@ with open(os.path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name="aetherlab",
-    version="0.3.0",
+    version="0.3.1",
     author="AetherLab",
     author_email="support@aetherlab.ai",
     description="Official Python SDK for AetherLab's AI Guardrails and Compliance Platform",

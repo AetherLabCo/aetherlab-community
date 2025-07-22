@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aetherlab"
-version = "0.3.0"
+version = "0.3.1"
 description = "Official Python SDK for AetherLab's AI Guardrails and Compliance Platform"
 readme = "README.md"
 authors = [

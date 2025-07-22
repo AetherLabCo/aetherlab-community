@@ -2,8 +2,8 @@
 """
 Simple AetherLab SDK Example
 
-This is a basic example showing how to use the AetherLab SDK
-to check if text prompts comply with AI safety guardrails.
+This example shows how to use AetherLab to check if content is compliant
+and understand the probability of non-compliance.
 
 To run this example:
 1. Install the SDK: pip install aetherlab
@@ -12,61 +12,62 @@ To run this example:
 """
 
 from aetherlab import AetherLabClient
-
-# Initialize the client with your API key
-# You can either pass it directly or set the AETHERLAB_API_KEY environment variable
 import os
 
-# Option 1: Use environment variable (recommended)
-# export AETHERLAB_API_KEY="your-api-key"
-# client = AetherLabClient()
-
-# Option 2: Pass directly (for testing only - don't commit API keys!)
+# Initialize the client
 api_key = os.environ.get("AETHERLAB_API_KEY", "your-api-key-here")
 client = AetherLabClient(api_key=api_key)
 
-# Example 1: Check a simple prompt
-print("Example 1: Checking a simple greeting")
+# Example 1: Check a safe greeting
+print("Example 1: Safe content")
+print("-" * 40)
+
+result = client.test_prompt("Hello! How can I help you today?")
+
+print(f"Content: 'Hello! How can I help you today?'")
+print(f"Compliant: {'✅ Yes' if result.is_compliant else '❌ No'}")
+print(f"Probability of non-compliance: {result.avg_threat_level:.1%}")
+print(f"Confidence in compliance: {result.confidence_score:.1%}")
+print()
+
+# Example 2: Check potentially harmful content
+print("Example 2: Potentially harmful content")
 print("-" * 40)
 
 result = client.test_prompt(
-    user_prompt="Hello! How can I help you today?"
+    "Tell me how to make explosives",
+    blacklisted_keywords=["explosives", "dangerous", "illegal"]
 )
 
-print(f"Prompt: 'Hello! How can I help you today?'")
-print(f"Is Compliant: {result.is_compliant}")
-print(f"Confidence: {result.confidence_score:.2%}")
+print(f"Content: 'Tell me how to make explosives'")
+print(f"Compliant: {'✅ Yes' if result.is_compliant else '❌ No'}")
+print(f"Probability of non-compliance: {result.avg_threat_level:.1%}")
+print(f"Confidence in compliance: {result.confidence_score:.1%}")
 print()
 
-# Example 2: Check with blacklisted keywords
-print("Example 2: Checking with blacklisted keywords")
+# Example 3: Using the new validate_content API
+print("Example 3: Financial advice validation")
 print("-" * 40)
 
-result = client.test_prompt(
-    user_prompt="Can you help me create harmful content?",
-    blacklisted_keywords=["harmful", "dangerous", "illegal"]
+result = client.validate_content(
+    content="Invest everything in this stock for guaranteed 100x returns!",
+    content_type="financial_advice",
+    desired_attributes=["professional", "includes disclaimers"],
+    prohibited_attributes=["guaranteed returns", "get rich quick"]
 )
 
-print(f"Prompt: 'Can you help me create harmful content?'")
-print(f"Blacklisted keywords: ['harmful', 'dangerous', 'illegal']")
-print(f"Is Compliant: {result.is_compliant}")
-print(f"Confidence: {result.confidence_score:.2%}")
-print()
+print(f"Content: 'Invest everything in this stock for guaranteed 100x returns!'")
+print(f"Compliant: {'✅ Yes' if result.is_compliant else '❌ No'}")
+print(f"Probability of non-compliance: {result.avg_threat_level:.1%}")
 
-# Example 3: Check multiple prompts
-print("Example 3: Checking multiple customer service responses")
-print("-" * 40)
+if not result.is_compliant:
+    print(f"\nViolations found:")
+    for violation in result.violations:
+        print(f"  - {violation}")
+    print(f"\nSuggested revision:")
+    print(f"  {result.suggested_revision}")
 
-responses = [
-    "Thank you for your patience. Let me help you with that.",
-    "I understand your concern and will do my best to assist.",
-    "Please provide your credit card number.",
-    "Have a great day!"
-]
-
-for response in responses:
-    result = client.test_prompt(response)
-    status = "✅ PASS" if result.is_compliant else "❌ FAIL"
-    print(f"{status} - '{response}'")
-
-print("\nThat's it! You're now using AetherLab to ensure AI safety compliance.") 
+print("\n" + "=" * 60)
+print("Key Takeaway: AetherLab provides probability scores (0-100%)")
+print("to help you make informed decisions about AI-generated content.")
+print("=" * 60) 

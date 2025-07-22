@@ -24,6 +24,11 @@ result = client.validate_content(
     prohibited_attributes=["rude", "misleading"]
 )
 
+# Check compliance metrics
+print(f"Compliant: {result.is_compliant}")
+print(f"Probability of non-compliance: {result.avg_threat_level:.1%}")
+print(f"Confidence in compliance: {result.confidence_score:.1%}")
+
 if result.is_compliant:
     print(f"✅ Content is safe: {result.content}")
 else:
