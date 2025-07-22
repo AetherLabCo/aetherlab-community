@@ -7,11 +7,11 @@ Welcome to AetherLab! This guide will help you get started with our AI Guardrail
 ### Python SDK
 
 ```bash
-# From TestPyPI (current)
-pip install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ aetherlab
-
-# From PyPI (coming soon)
+# Install from PyPI
 pip install aetherlab
+
+# Upgrade to latest version
+pip install --upgrade aetherlab
 ```
 
 ## Get Your API Key

@@ -1,28 +1,15 @@
-# AetherLab SDK Examples
+# AetherLab Community Examples
 
-This directory contains examples for using the AetherLab SDKs in various programming languages.
+This directory contains example code demonstrating how to use the AetherLab SDKs.
 
-## Python Examples
+## 📦 Installation
 
-- **[simple_example.py](python/simple_example.py)** - A beginner-friendly example showing basic usage
-- **[guardrails_demo.py](python/guardrails_demo.py)** - Comprehensive demo of all SDK features
-- **[client_quickstart.md](python/client_quickstart.md)** - Step-by-step quick start guide
+First, install the AetherLab SDK for your language:
 
-### Running Python Examples
+### Python
 
-1. Install the SDK:
 ```bash
-pip install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ aetherlab
-```
-
-2. Set your API key:
-```bash
-export AETHERLAB_API_KEY="your-api-key"
-```
-
-3. Run an example:
-```bash
-python python/simple_example.py
+pip install aetherlab
 ```
 
 ## JavaScript Examples

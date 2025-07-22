@@ -25,6 +25,13 @@ class ComplianceResult:
     recommendations: List[str]
     metadata: Dict[str, Any]
     
+    # Additional fields for new API compatibility
+    content: Optional[str] = None
+    content_type: Optional[str] = None
+    context: Optional[Dict[str, Any]] = None
+    violations: Optional[List[str]] = None
+    suggested_revision: Optional[str] = None
+    
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "ComplianceResult":
         """Create ComplianceResult from API response."""
