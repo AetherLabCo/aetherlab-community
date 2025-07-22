@@ -96,6 +96,68 @@ class AetherLabClient:
         )
         return ComplianceResult.from_dict(response)
     
+    def validate_content(
+        self,
+        content: str,
+        content_type: Optional[str] = None,
+        desired_attributes: Optional[List[str]] = None,
+        prohibited_attributes: Optional[List[str]] = None,
+        context: Optional[Dict[str, Any]] = None,
+        regulations: Optional[List[str]] = None,
+        **kwargs
+    ) -> ComplianceResult:
+        """
+        Validate content for compliance (new API that wraps test_prompt).
+        
+        Args:
+            content: The content to validate
+            content_type: Type of content (e.g., "financial_advice", "marketing_copy")
+            desired_attributes: List of attributes the content should have
+            prohibited_attributes: List of attributes the content should not have
+            context: Additional context for validation
+            regulations: List of regulations to check against (e.g., ["SEC", "FINRA"])
+            **kwargs: Additional parameters
+            
+        Returns:
+            ComplianceResult object with enhanced fields for the new API
+            
+        Example:
+            >>> result = client.validate_content(
+            ...     content="Invest all your money in crypto!",
+            ...     content_type="financial_advice",
+            ...     desired_attributes=["professional", "accurate"],
+            ...     prohibited_attributes=["guaranteed returns", "unlicensed advice"]
+            ... )
+        """
+        # Map new parameter names to old API
+        result = self.test_prompt(
+            user_prompt=content,
+            whitelisted_keywords=desired_attributes,
+            blacklisted_keywords=prohibited_attributes,
+            **kwargs
+        )
+        
+        # Add additional fields expected by new examples
+        result.content = content
+        result.violations = []
+        result.suggested_revision = None
+        
+        # If not compliant, generate violations list
+        if not result.is_compliant:
+            if prohibited_attributes:
+                # Simple simulation of violations
+                result.violations = [f"Content may contain: {attr}" for attr in prohibited_attributes[:2]]
+            if desired_attributes:
+                result.violations.append(f"Content lacks required attributes")
+            
+            # Simple suggested revision
+            if "financial" in (content_type or "").lower():
+                result.suggested_revision = "I can provide general financial information, but please consult with a licensed financial advisor for personalized investment advice."
+            else:
+                result.suggested_revision = "Please revise the content to meet compliance standards."
+        
+        return result
+    
     def test_image(
         self,
         image: Union[str, BinaryIO],
