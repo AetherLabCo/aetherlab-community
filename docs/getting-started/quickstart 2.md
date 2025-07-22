@@ -27,25 +27,20 @@ Create a file called `test_aetherlab.py`:
 ```python
 from aetherlab import AetherLabClient
 
-# Initialize AetherLab
-client = AetherLabClient(api_key="your-api-key")
+# Initialize the client
+client = AetherLabClient(api_key="your-api-key-here")
 
-# AI generates a response that could be risky
-ai_response = "You should definitely invest all your savings in crypto! Guaranteed 10x returns!"
+# Test a simple prompt
+result = client.test_prompt("Hello, how can I help you today?")
 
-# AetherLab ensures it's safe and compliant
-result = client.validate_content(
-    content=ai_response,
-    content_type="financial_advice",
-    desired_attributes=["professional", "accurate", "includes disclaimers"],
-    prohibited_attributes=["guaranteed returns", "financial advice without disclaimer"]
-)
-
+# Check the results
 if result.is_compliant:
-    print(f"✅ Safe to send: {result.content}")
+    print("✅ This prompt is safe to use!")
 else:
-    print(f"🚫 Blocked: {result.violations}")
-    print(f"✅ Safe alternative: {result.suggested_revision}")
+    print("❌ This prompt may have issues.")
+    
+print(f"Confidence: {result.confidence_score:.2%}")
+print(f"Threat Level: {result.avg_threat_level:.4f}")
 ```
 
 ## Using Environment Variables (Recommended)
@@ -65,45 +60,32 @@ from aetherlab import AetherLabClient
 client = AetherLabClient()
 ```
 
-## Real-World Examples
+## Testing with Keywords
 
-### Media & Entertainment
+### Blacklisted Keywords
 
-Ensure AI-generated content meets brand standards:
+Prevent specific terms from being used:
 
 ```python
-# AI generates show description
-ai_description = "This show is better than Netflix! Contains spoilers: everyone dies!"
-
-result = client.validate_content(
-    content=ai_description,
-    content_type="media_description",
-    desired_attributes=["engaging", "spoiler-free", "brand-appropriate"],
-    prohibited_attributes=["competitor mentions", "plot spoilers"]
+result = client.test_prompt(
+    "Tell me about harmful activities",
+    blacklisted_keywords=["harmful", "dangerous", "illegal"]
 )
 
-# Result: Blocked for competitor mention and spoilers
-# Suggests: "This captivating show delivers suspense and drama!"
+if not result.is_compliant:
+    print("Prompt contains blacklisted terms!")
 ```
 
-### Financial Services
+### Whitelisted Keywords
 
-Ensure compliance and prevent harmful advice:
+Ensure specific terms are present:
 
 ```python
-# Customer asks about investments
-ai_response = "Bitcoin will definitely 10x! Move your 401k now!"
-
-result = client.validate_content(
-    content=ai_response,
-    content_type="financial_advice",
-    desired_attributes=["educational", "includes disclaimers"],
-    prohibited_attributes=["guaranteed returns", "unlicensed advice"],
-    regulations=["SEC", "FINRA"]
+result = client.test_prompt(
+    "What's the weather forecast for tomorrow?",
+    whitelisted_keywords=["weather", "forecast"],
+    blacklisted_keywords=["harmful"]
 )
-
-# Result: Blocked for compliance violations
-# Suggests: "Cryptocurrency is volatile. Consult a licensed advisor."
 ```
 
 ## Understanding Results
