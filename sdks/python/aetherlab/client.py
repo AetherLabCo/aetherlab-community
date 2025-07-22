@@ -1,7 +1,7 @@
 """
 AetherLab API Client
 
-Main client for interacting with the AetherLab Guardrails API.
+Main client for interacting with the AetherLab AI Control Layer.
 """
 
 import os
@@ -21,7 +21,8 @@ class AetherLabClient:
     Main client for interacting with the AetherLab API.
     
     This client provides methods to:
-    - Test text prompts for compliance
+    - Validate content for compliance and quality
+    - Test text prompts for compliance (legacy)
     - Analyze images/media for compliance
     - Add secure watermarks to images
     - Retrieve guardrail logs
@@ -50,8 +51,100 @@ class AetherLabClient:
         self.session = requests.Session()
         self.session.headers.update({
             "X-API-Key": self.api_key,
-            "User-Agent": "aetherlab-python/0.1.1"
+            "User-Agent": "aetherlab-python/0.3.0"
         })
+    
+    def validate_content(
+        self,
+        content: str,
+        content_type: str,
+        context: Optional[Dict[str, Any]] = None,
+        desired_attributes: Optional[List[str]] = None,
+        prohibited_attributes: Optional[List[str]] = None,
+        **kwargs
+    ) -> ComplianceResult:
+        """
+        Validate content for compliance, quality, and brand consistency.
+        
+        This is the new recommended API that provides a cleaner interface
+        while internally using the existing backend infrastructure.
+        
+        Args:
+            content: The content to validate
+            content_type: Type of content (e.g., "financial_advice", "media_description", "customer_support")
+            context: Additional context for validation (reserved for future use)
+            desired_attributes: List of desired attributes the content should have
+            prohibited_attributes: List of attributes the content should not have
+            **kwargs: Additional parameters
+            
+        Returns:
+            ComplianceResult object with enhanced fields including violations and suggestions
+            
+        Example:
+            >>> client = AetherLabClient(api_key="your-key")
+            >>> result = client.validate_content(
+            ...     content="Invest all your money in crypto!",
+            ...     content_type="financial_advice",
+            ...     desired_attributes=["professional", "includes disclaimers"],
+            ...     prohibited_attributes=["guaranteed returns"]
+            ... )
+            >>> if not result.is_compliant:
+            ...     print(f"Violations: {result.violations}")
+            ...     print(f"Suggestion: {result.suggested_revision}")
+        """
+        # Map the new API to the existing backend API
+        result = self.test_prompt(
+            user_prompt=content,
+            whitelisted_keywords=desired_attributes,
+            blacklisted_keywords=prohibited_attributes,
+            **kwargs
+        )
+        
+        # Enhance the result with additional fields for the new API
+        result.content = content
+        result.content_type = content_type
+        result.context = context or {}
+        
+        # Generate violations based on compliance status
+        result.violations = []
+        if not result.is_compliant:
+            # Simulate violations based on the attributes
+            if prohibited_attributes:
+                result.violations.append(f"Content may contain prohibited attributes")
+            if desired_attributes:
+                result.violations.append(f"Content may lack required attributes")
+            
+            # Add threat level information if available
+            if hasattr(result, 'avg_threat_level') and result.avg_threat_level > 0.5:
+                result.violations.append(f"High risk content detected (threat level: {result.avg_threat_level:.2f})")
+        
+        # Generate suggested revision
+        result.suggested_revision = None
+        if not result.is_compliant:
+            # Content-type specific suggestions
+            if "financial" in content_type.lower():
+                result.suggested_revision = (
+                    "I can provide general financial information, but please consult "
+                    "with a licensed financial advisor for personalized investment advice. "
+                    "Past performance does not guarantee future results."
+                )
+            elif "medical" in content_type.lower() or "health" in content_type.lower():
+                result.suggested_revision = (
+                    "I can share general health information, but please consult "
+                    "with a qualified healthcare professional for medical advice."
+                )
+            elif "legal" in content_type.lower():
+                result.suggested_revision = (
+                    "I can provide general legal information, but please consult "
+                    "with a licensed attorney for legal advice specific to your situation."
+                )
+            else:
+                result.suggested_revision = (
+                    "Please revise the content to ensure it meets compliance standards "
+                    "and includes appropriate disclaimers."
+                )
+        
+        return result
     
     def test_prompt(
         self,
@@ -62,6 +155,9 @@ class AetherLabClient:
     ) -> ComplianceResult:
         """
         Test a text prompt for compliance against guardrails.
+        
+        This is the original API method that directly maps to the backend.
+        For new implementations, consider using validate_content() instead.
         
         Args:
             user_prompt: The text prompt to test
@@ -95,72 +191,6 @@ class AetherLabClient:
             headers={"Content-Type": "application/json"}
         )
         return ComplianceResult.from_dict(response)
-    
-    def validate_content(
-        self,
-        content: Optional[str] = None,
-        content_type: Optional[str] = None,
-        desired_attributes: Optional[List[str]] = None,
-        prohibited_attributes: Optional[List[str]] = None,
-        context: Optional[Dict[str, Any]] = None,
-        regulations: Optional[List[str]] = None,
-        **kwargs
-    ) -> ComplianceResult:
-        """
-        Validate content for compliance (new API that wraps test_prompt).
-        
-        Args:
-            content: The content to validate (optional, defaults to empty string)
-            content_type: Type of content (e.g., "financial_advice", "marketing_copy") (optional)
-            desired_attributes: List of attributes the content should have
-            prohibited_attributes: List of attributes the content should not have
-            context: Additional context for validation
-            regulations: List of regulations to check against (e.g., ["SEC", "FINRA"])
-            **kwargs: Additional parameters
-            
-        Returns:
-            ComplianceResult object with enhanced fields for the new API
-            
-        Example:
-            >>> result = client.validate_content(
-            ...     content="Invest all your money in crypto!",
-            ...     content_type="financial_advice",
-            ...     desired_attributes=["professional", "accurate"],
-            ...     prohibited_attributes=["guaranteed returns", "unlicensed advice"]
-            ... )
-        """
-        # Handle optional content parameter
-        if content is None:
-            content = ""
-        
-        # Map new parameter names to old API
-        result = self.test_prompt(
-            user_prompt=content,
-            whitelisted_keywords=desired_attributes,
-            blacklisted_keywords=prohibited_attributes,
-            **kwargs
-        )
-        
-        # Add additional fields expected by new examples
-        result.content = content
-        result.violations = []
-        result.suggested_revision = None
-        
-        # If not compliant, generate violations list
-        if not result.is_compliant:
-            if prohibited_attributes:
-                # Simple simulation of violations
-                result.violations = [f"Content may contain: {attr}" for attr in prohibited_attributes[:2]]
-            if desired_attributes:
-                result.violations.append(f"Content lacks required attributes")
-            
-            # Simple suggested revision
-            if "financial" in (content_type or "").lower():
-                result.suggested_revision = "I can provide general financial information, but please consult with a licensed financial advisor for personalized investment advice."
-            else:
-                result.suggested_revision = "Please revise the content to meet compliance standards."
-        
-        return result
     
     def test_image(
         self,
@@ -225,6 +255,35 @@ class AetherLabClient:
         
         return MediaComplianceResult.from_dict(response)
     
+    def analyze_media(
+        self,
+        image_data: Union[str, bytes, BinaryIO],
+        media_type: str = "image",
+        analysis_types: Optional[List[str]] = None,
+        **kwargs
+    ) -> MediaComplianceResult:
+        """
+        Analyze media content for compliance (new API wrapping test_image).
+        
+        Args:
+            image_data: Base64 string, bytes, or file-like object
+            media_type: Type of media ("image", "video" coming soon)
+            analysis_types: Specific analyses to perform (reserved for future use)
+            **kwargs: Additional parameters
+            
+        Returns:
+            MediaComplianceResult object
+        """
+        # Convert to format expected by test_image
+        if isinstance(image_data, bytes):
+            image_b64 = base64.b64encode(image_data).decode()
+            return self.test_image(image_b64, input_type="base64", **kwargs)
+        elif hasattr(image_data, 'read'):
+            return self.test_image(image_data, input_type="file", **kwargs)
+        else:
+            # Assume string - could be path, URL, or base64
+            return self.test_image(image_data, input_type="auto", **kwargs)
+    
     def add_watermark(
         self,
         image: Union[str, BinaryIO],
@@ -275,6 +334,39 @@ class AetherLabClient:
             )
         
         return SecureMarkResult.from_dict(response)
+    
+    def add_secure_watermark(
+        self,
+        image_data: Union[str, bytes, BinaryIO],
+        watermark_type: str = "invisible",
+        metadata: Optional[Dict[str, Any]] = None,
+        **kwargs
+    ) -> SecureMarkResult:
+        """
+        Add a secure, trackable watermark to an image (new API wrapping add_watermark).
+        
+        Args:
+            image_data: Base64 string, bytes, or file-like object
+            watermark_type: Type of watermark ("invisible", "visible") - reserved for future use
+            metadata: Metadata to embed in the watermark - reserved for future use
+            **kwargs: Additional parameters
+            
+        Returns:
+            SecureMarkResult object with watermarked image
+        """
+        # Extract watermark text from metadata if provided
+        watermark_text = None
+        if metadata and isinstance(metadata, dict):
+            watermark_text = metadata.get("text", metadata.get("watermark_text"))
+        
+        # Convert to format expected by add_watermark
+        if isinstance(image_data, bytes):
+            image_b64 = base64.b64encode(image_data).decode()
+            return self.add_watermark(image_b64, watermark_text, input_type="base64", **kwargs)
+        elif hasattr(image_data, 'read'):
+            return self.add_watermark(image_data, watermark_text, input_type="file", **kwargs)
+        else:
+            return self.add_watermark(image_data, watermark_text, input_type="auto", **kwargs)
     
     def get_logs(
         self,
@@ -332,6 +424,83 @@ class AetherLabClient:
         
         logs_data = response.get("data", {}).get("logs", [])
         return [GuardrailLog.from_dict(log) for log in logs_data]
+    
+    def get_audit_logs(
+        self,
+        start_date: Optional[datetime] = None,
+        end_date: Optional[datetime] = None,
+        content_type: Optional[str] = None,
+        compliance_status: Optional[bool] = None,
+        limit: int = 100,
+        offset: int = 0,
+        **kwargs
+    ) -> List[Dict[str, Any]]:
+        """
+        Retrieve audit logs for compliance checks (new API wrapping get_logs).
+        
+        Args:
+            start_date: Filter logs after this date
+            end_date: Filter logs before this date
+            content_type: Filter by content type (reserved for future use)
+            compliance_status: Filter by compliance status
+            limit: Maximum number of logs to return
+            offset: Pagination offset
+            **kwargs: Additional filters
+            
+        Returns:
+            List of audit log entries
+        """
+        # Convert datetime to string format expected by get_logs
+        start_str = start_date.strftime("%Y-%m-%d") if start_date else None
+        end_str = end_date.strftime("%Y-%m-%d") if end_date else None
+        
+        # Convert compliance status to string
+        status_str = None
+        if compliance_status is not None:
+            status_str = "passed" if compliance_status else "failed"
+        
+        # Calculate page from offset and limit
+        page = (offset // limit) + 1
+        
+        # Get logs using existing API
+        logs = self.get_logs(
+            start_date=start_str,
+            end_date=end_str,
+            compliance_status=status_str,
+            page=page
+        )
+        
+        # Convert to new format
+        return [log.to_dict() for log in logs[:limit]]
+    
+    def get_usage_stats(
+        self,
+        period: str = "month",
+        **kwargs
+    ) -> Dict[str, Any]:
+        """
+        Get usage statistics for your account.
+        
+        Note: This endpoint is not yet implemented on the backend.
+        Returns mock data for now.
+        
+        Args:
+            period: Time period ("day", "week", "month", "year")
+            **kwargs: Additional parameters
+            
+        Returns:
+            Dictionary with usage statistics
+        """
+        # Placeholder implementation until backend support is added
+        return {
+            "period": period,
+            "total_requests": 0,
+            "compliant_requests": 0,
+            "non_compliant_requests": 0,
+            "media_analyzed": 0,
+            "watermarks_added": 0,
+            "message": "Usage statistics coming soon"
+        }
     
     def _detect_image_input_type(self, image: Union[str, BinaryIO]) -> str:
         """Detect the type of image input."""
