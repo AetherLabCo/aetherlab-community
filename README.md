@@ -46,11 +46,14 @@ result = client.validate_content(
     prohibited_attributes=["guaranteed returns", "unlicensed advice"]
 )
 
+print(f"Compliant: {result.is_compliant}")
+print(f"Probability of non-compliance: {result.avg_threat_level:.1%}")
+
 if result.is_compliant:
     print(f"✅ Safe: {result.content}")
 else:
     print(f"🚫 Blocked: {result.violations}")
-    print(f"✅ Alternative: {result.suggested_revision}")
+    print(f"✅ Safe alternative: {result.suggested_revision}")
 ```
 
 ## 💰 Real Business Impact

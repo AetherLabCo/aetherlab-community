@@ -2,6 +2,17 @@
 
 All notable changes to the AetherLab SDK will be documented in this file.
 
+## [0.3.1] - 2024-12-20
+
+### Changed
+- 📊 Updated all examples to explicitly show probability of non-compliance (`avg_threat_level`)
+- 📝 Enhanced documentation to highlight the probability metrics
+- 🎯 Made compliance metrics more prominent in all code examples
+
+### Added
+- ✨ Clear explanation that `avg_threat_level` represents probability of non-compliance (0-100%)
+- 📈 Better visualization of risk metrics in examples
+
 ## [0.3.0] - 2024-12-20
 
 ### Added

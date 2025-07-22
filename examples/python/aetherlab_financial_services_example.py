@@ -178,31 +178,44 @@ def test_investment_recommendations():
         print(f"\n👤 Client Profile: {rec['client_profile']}")
         print(f"🤖 AI Recommendation: {rec['ai_recommendation']}")
         
+        # Analyze the response
         result = client.validate_content(
             content=rec['ai_recommendation'],
-            content_type="investment_recommendation",
+            content_type="investment_advice",
             context={
-                "client_type": rec['client_profile'],
-                "channel": "digital_platform"
+                "user_type": "retail_investor",
+                "regulatory_jurisdiction": "US",
+                "channel": "robo_advisor"
             },
             desired_attributes=[
-                "appropriate disclaimers",
-                "risk-appropriate advice",
-                "professional language",
+                "includes risk disclaimers",
+                "mentions past performance disclaimer",
+                "suggests professional consultation",
                 "educational tone"
             ],
             prohibited_attributes=[
                 "guaranteed returns",
                 "get rich quick schemes",
-                "unlicensed advice",
-                "meme stock promotion"
-            ],
-            regulations=["SEC", "FINRA Rule 2111"]
+                "pressure tactics",
+                "unregistered investment advice"
+            ]
         )
         
-        print(f"Status: {'✅ COMPLIANT' if result.is_compliant else '🚫 VIOLATION'}")
-        print(f"Risk Score: {result.risk_score}/10")
+        # Display results
+        print(f"\nCompliance Status: {'✅ COMPLIANT' if result.is_compliant else '❌ NON-COMPLIANT'}")
+        print(f"Probability of non-compliance: {result.avg_threat_level:.1%}")
+        print(f"Confidence in assessment: {result.confidence_score:.1%}")
         
+        if not result.is_compliant:
+            print(f"\n⚠️  Violations detected:")
+            for violation in result.violations:
+                print(f"   - {violation}")
+            
+            print(f"\n✅ Suggested compliant version:")
+            print(f"   '{result.suggested_revision}'")
+        
+        return result
+
 def show_compliance_dashboard():
     """Show real-time compliance monitoring dashboard."""
     print("\n\n📊 GlobalBank AI Compliance Dashboard")

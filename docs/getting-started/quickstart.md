@@ -41,11 +41,16 @@ result = client.validate_content(
     prohibited_attributes=["guaranteed returns", "financial advice without disclaimer"]
 )
 
+# Check the result
 if result.is_compliant:
-    print(f"✅ Safe to send: {result.content}")
+    print("✅ Content is safe to use!")
+    print(f"Confidence: {result.confidence_score:.1%}")
+    print(f"Probability of non-compliance: {result.avg_threat_level:.1%}")
 else:
-    print(f"🚫 Blocked: {result.violations}")
-    print(f"✅ Safe alternative: {result.suggested_revision}")
+    print("❌ Content has compliance issues!")
+    print(f"Probability of non-compliance: {result.avg_threat_level:.1%}")
+    print(f"Violations: {result.violations}")
+    print(f"Suggested revision: {result.suggested_revision}")
 ```
 
 ## Using Environment Variables (Recommended)
