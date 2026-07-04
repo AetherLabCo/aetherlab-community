@@ -195,6 +195,20 @@ def test_rate_limit_error_carries_retry_after(client):
 
 
 @respx.mock
+def test_error_body_without_message_uses_reason_phrase(client):
+    # {"error": true} with no "message" must not become the message "True".
+    respx.post(f"{BASE}/v1/guardrails/prompt").mock(
+        return_value=httpx.Response(
+            400, json={"error": True, "error_code": "ERR_0202"}
+        )
+    )
+    with pytest.raises(MissingPolicyError) as excinfo:
+        client.check_prompt("Hi")
+    assert excinfo.value.message == "Bad Request"
+    assert "True" not in str(excinfo.value)
+
+
+@respx.mock
 def test_generic_api_error(client):
     respx.post(f"{BASE}/v1/guardrails/prompt").mock(
         return_value=httpx.Response(

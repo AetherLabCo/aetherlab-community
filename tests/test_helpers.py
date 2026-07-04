@@ -30,6 +30,13 @@ def test_parse_retry_after_seconds():
     assert parse_retry_after("not-a-date") is None
 
 
+def test_parse_retry_after_rejects_non_finite():
+    # inf would make time.sleep() raise OverflowError; nan poisons max().
+    assert parse_retry_after("inf") is None
+    assert parse_retry_after("-inf") is None
+    assert parse_retry_after("nan") is None
+
+
 def test_parse_retry_after_http_date():
     import email.utils
     import time

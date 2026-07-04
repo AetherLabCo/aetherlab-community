@@ -6,6 +6,7 @@ Nothing in this module is part of the public API.
 from __future__ import annotations
 
 import email.utils
+import math
 import os
 import random
 import time
@@ -74,7 +75,6 @@ def build_media_form(
     *,
     input_type: str,
     output_type: str = "json",
-    image: str | None = None,
     whitelisted_keywords: KeywordList = None,
     blacklisted_keywords: KeywordList = None,
     reasoning_mode: str | None = None,
@@ -82,8 +82,6 @@ def build_media_form(
     environment: str | None = None,
 ) -> dict[str, Any]:
     form: dict[str, Any] = {"input_type": input_type, "output_type": output_type}
-    if image is not None:
-        form["image"] = image
     whitelist = join_keywords(whitelisted_keywords)
     blacklist = join_keywords(blacklisted_keywords)
     if whitelist is not None:
@@ -104,14 +102,16 @@ def parse_retry_after(value: str | None) -> float | None:
     if not value:
         return None
     try:
-        return max(0.0, float(value))
+        seconds = float(value)
     except ValueError:
         pass
+    else:
+        # Reject inf/nan: time.sleep(inf) raises OverflowError.
+        return max(0.0, seconds) if math.isfinite(seconds) else None
     try:
+        # Raises TypeError (3.9) or ValueError (3.10+) for unparseable dates.
         when = email.utils.parsedate_to_datetime(value)
     except (TypeError, ValueError):
-        return None
-    if when is None:
         return None
     delta = when.timestamp() - time.time()
     return max(0.0, delta)
@@ -134,10 +134,14 @@ def _extract_error(body: Any, response: httpx.Response) -> tuple[str | None, str
     """Pull (error_code, message) out of an error response body."""
     if isinstance(body, dict):
         error_code = body.get("error_code")
-        message = body.get("message") or body.get("error") or response.reason_phrase
+        message = body.get("message") or body.get("error")
+        if not (isinstance(message, str) and message.strip()):
+            # e.g. {"error": true} without a message: fall back to the HTTP
+            # reason phrase instead of the string "True".
+            message = response.reason_phrase or f"HTTP {response.status_code}"
         return (
             str(error_code) if error_code is not None else None,
-            str(message),
+            message,
         )
     text = response.text.strip()
     return None, text or response.reason_phrase or f"HTTP {response.status_code}"
