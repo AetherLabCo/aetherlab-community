@@ -1,57 +1,55 @@
 # Changelog
 
-All notable changes to the AetherLab SDK will be documented in this file.
+All notable changes to the AetherLab Python SDK are documented here.
 
-## [0.3.1] - 2024-12-20
+## [0.4.0] - 2026-07-03
+
+Complete rework of the SDK around the real Guardrails API. Releases prior to
+0.4.0 (0.1.x-0.3.x) are deprecated: parts of their public surface fabricated
+results client-side or called endpoints that cannot work with API-key
+authentication, and their version metadata was inconsistent. Upgrading is
+strongly recommended.
+
+### Added
+- `AsyncAetherLabClient`: first-class async support (httpx).
+- `check_prompt()`: prompt guardrail checks via `POST /v1/guardrails/prompt`,
+  with `whitelisted_keywords`, `blacklisted_keywords`, `reasoning_mode`,
+  `risk_tolerance`, and `environment`.
+- `check_media()`: media guardrail checks via `POST /v1/guardrails/media`
+  (multipart), supporting file/URL/base64 inputs.
+- Error taxonomy: `AuthenticationError`, `RateLimitError` (with
+  `retry_after`), `MissingPolicyError`, `InvalidRequestError`, `APIError`,
+  `APIConnectionError` - all subclasses of `AetherLabError`.
+- Automatic retries with exponential backoff and jitter for connection
+  errors, 429, and 5xx responses; honours `Retry-After`.
+- `ComplianceResult` / `MediaComplianceResult` now expose every field the API
+  returns (`compliance_status`, `avg_threat_level`, `confidence`,
+  `rationale`) plus `raw` with the full response body. Nothing is invented
+  client-side.
+- Typed package (`py.typed`), `src/` layout, single-sourced version
+  (`aetherlab.__version__` matches the installed distribution and the
+  User-Agent header).
 
 ### Changed
-- 📊 Updated all examples to explicitly show probability of non-compliance (`avg_threat_level`)
-- 📝 Enhanced documentation to highlight the probability metrics
-- 🎯 Made compliance metrics more prominent in all code examples
+- The default base URL is `https://api.aetherlab.co`, overridable with
+  `AETHERLAB_BASE_URL`.
+- `test_prompt()` is now a thin deprecated alias of `check_prompt()` and
+  emits a `DeprecationWarning`.
+- Requires Python 3.9+. The only runtime dependency is `httpx`.
 
-### Added
-- ✨ Clear explanation that `avg_threat_level` represents probability of non-compliance (0-100%)
-- 📈 Better visualization of risk metrics in examples
+### Removed
+- `validate_content()`: it generated "violations" and "suggested revisions"
+  client-side from hardcoded templates instead of the API.
+- `get_usage_stats()`: it returned hardcoded zeros.
+- `get_logs()` / `get_audit_logs()`: the logs endpoint requires dashboard
+  (JWT) authentication and can never work with an API key.
+- `analyze_media()`: replaced by `check_media()`.
+- Committed API keys and fabricated documentation/examples were removed from
+  the repository.
 
-## [0.3.0] - 2024-12-20
+## [0.3.1] and earlier
 
-### Added
-- 🎉 Production PyPI release - now available via `pip install aetherlab`
-- ✨ New `validate_content()` API with enhanced features:
-  - Content type specification
-  - Desired and prohibited attributes
-  - Context support
-  - Automatic violation detection
-  - Suggested revisions for non-compliant content
-- 🔧 Backward compatibility layer for legacy `test_prompt()` API
-- 📝 Enhanced models with new fields for violations and suggestions
-- 🚀 Full support for media analysis via `analyze_media()`
-- 🔐 Enhanced watermarking via `add_secure_watermark()`
-
-### Changed
-- 📦 Moved from TestPyPI to production PyPI
-- 🔄 Internal API calls now properly map between new and legacy formats
-- 📚 Updated all documentation to use production installation
-- 🎯 API responses now include more detailed compliance information
-
-### Fixed
-- 🐛 Fixed model attributes for new API compatibility
-- 🔧 Corrected API authentication headers
-- ✅ Enhanced error handling for better developer experience
-
-## [0.2.1] - 2024-07-20
-### Added
-- Initial release of AetherLab Python SDK
-- Support for text prompt compliance testing
-- Blacklist and whitelist keyword filtering
-- Comprehensive error handling
-- Full type hints and documentation
-- Examples and quick start guide
-
-### Features
-- `AetherLabClient` for API interaction
-- `test_prompt()` method for text compliance checking
-- `test_image()` method for image compliance (placeholder)
-- `add_watermark()` method for secure watermarking (placeholder)
-- Custom exception classes for better error handling
-- Data models for API responses 
+Deprecated. These releases shipped inconsistent version metadata
+(`__version__` 0.1.2, package metadata 0.3.1, User-Agent 0.3.0) and the
+fabricated behaviors described above. Their changelog entries have been
+removed because their dates and claims were not reliable.

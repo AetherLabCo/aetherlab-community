@@ -1,85 +1,50 @@
-# Contributing to AetherLab Community
+# Contributing to the AetherLab Python SDK
 
-Thank you for your interest in contributing to AetherLab! We welcome contributions from the community.
+Thanks for your interest in contributing!
 
-## How to Contribute
-
-### Reporting Issues
+## Reporting issues
 
 If you find a bug or have a feature request:
 
-1. Check if the issue already exists in our [issue tracker](https://github.com/AetherLabCo/aetherlab-community/issues)
-2. If not, create a new issue with:
-   - Clear title and description
-   - Steps to reproduce (for bugs)
-   - Expected vs actual behavior
-   - Your environment details (OS, Python version, SDK version)
+1. Check the [issue tracker](https://github.com/AetherLabCo/aetherlab-community/issues) for existing reports.
+2. Open a new issue with a clear title, steps to reproduce (for bugs),
+   expected vs. actual behavior, and your environment (OS, Python version,
+   SDK version).
 
-### Submitting Pull Requests
+## Development setup
 
-1. **Fork the repository** and create your branch from `main`
-2. **Make your changes**:
-   - Write clear, concise commit messages
-   - Add tests if applicable
-   - Update documentation as needed
-3. **Test your changes**:
-   ```bash
-   cd sdks/python
-   python -m pytest tests/  # If tests exist
-   python examples/python/simple_example.py  # Manual testing
-   ```
-4. **Submit a pull request**:
-   - Describe your changes
-   - Reference any related issues
-   - Ensure CI tests pass
+```bash
+git clone https://github.com/AetherLabCo/aetherlab-community.git
+cd aetherlab-community
+python -m venv .venv && source .venv/bin/activate
+pip install -e ".[dev]"
+```
 
-### Development Setup
+## Running checks
 
-1. Clone your fork:
-   ```bash
-   git clone https://github.com/YOUR_USERNAME/aetherlab-community.git
-   cd aetherlab-community
-   ```
+```bash
+ruff check src tests examples   # lint
+mypy                            # type-check (configured in pyproject.toml)
+pytest                          # unit tests (all HTTP is mocked)
+```
 
-2. Create a virtual environment:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
+The live smoke tests are skipped unless you export both `AETHERLAB_API_KEY`
+and `AETHERLAB_BASE_URL`:
 
-3. Install the SDK in development mode:
-   ```bash
-   cd sdks/python
-   pip install -e .
-   ```
+```bash
+AETHERLAB_API_KEY=... AETHERLAB_BASE_URL=... pytest tests/test_live_smoke.py
+```
 
-### Code Style
+Never commit API keys, and never hardcode them in tests or examples.
 
-- Follow [PEP 8](https://www.python.org/dev/peps/pep-0008/) for Python code
-- Use meaningful variable and function names
-- Add type hints where appropriate
-- Document functions and classes with docstrings
+## Submitting pull requests
 
-### Testing
+1. Fork the repository and create a branch from `main`.
+2. Make your changes, including tests for new behavior.
+3. Make sure `ruff`, `mypy`, and `pytest` all pass.
+4. Use conventional commit messages (e.g. `fix(sdk): handle empty rationale`).
+5. Open a pull request describing the change and referencing related issues.
 
-- Add tests for new features
-- Ensure existing tests pass
-- Test with multiple Python versions if possible
+## Questions
 
-### Documentation
-
-- Update README files as needed
-- Add docstrings to new functions/classes
-- Update examples if API changes
-
-## Code of Conduct
-
-Please note that this project is released with a Contributor Code of Conduct. By participating in this project you agree to abide by its terms.
-
-## Questions?
-
-Feel free to reach out:
-- Open an issue for questions
-- Email: support@aetherlab.ai
-
-Thank you for contributing to AetherLab! 
+Open an issue, or email support@aetherlab.co.

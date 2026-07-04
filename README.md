@@ -1,164 +1,168 @@
-# AetherLab Community
+# AetherLab Python SDK
 
-<div align="center">
-  <img src="https://aetherlab.ai/logo.png" alt="AetherLab Logo" width="200"/>
-  
-  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-  [![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-  [![PyPI](https://img.shields.io/pypi/v/aetherlab)](https://pypi.org/project/aetherlab/)
-  [![Discord](https://img.shields.io/discord/YOUR_DISCORD_ID?logo=discord)](https://discord.gg/YOUR_INVITE)
-  [![Twitter Follow](https://img.shields.io/twitter/follow/aetherlabai?style=social)](https://twitter.com/aetherlabai)
-</div>
+[![CI](https://github.com/AetherLabCo/aetherlab-community/actions/workflows/ci.yml/badge.svg)](https://github.com/AetherLabCo/aetherlab-community/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/aetherlab)](https://pypi.org/project/aetherlab/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## 🚀 AetherLab: The AI Control Layer for Enterprise
+The official Python SDK for the [AetherLab](https://aetherlab.co) Guardrails API.
+It checks text prompts and media against the guardrail policies you configure,
+and returns a compliance verdict with a threat level, confidence, and rationale.
 
-Your AI should work exactly how you need it to. AetherLab ensures it does.
+- **Website:** https://aetherlab.co
+- **Dashboard (API keys & Policy Controls):** https://app.aetherlab.co
+- **API base URL:** `https://api.aetherlab.co`
 
-### 🎯 What is AetherLab?
-
-AetherLab is the AI control layer that prevents costly mistakes, ensures compliance, and maintains quality at scale:
-
-- **🛡️ Prevent AI Disasters** - Block harmful outputs before they reach users
-- **📊 Ensure Compliance** - Automatic regulatory compliance (SEC, HIPAA, GDPR)
-- **🎨 Maintain Brand Voice** - Keep AI responses on-brand, always
-- **🌍 Multi-Language** - Context-aware control, not just keyword blocking
-- **⚡ Real-Time** - <50ms latency, no impact on user experience
-
-## 📦 Quick Start
+## Installation
 
 ```bash
 pip install aetherlab
 ```
 
+Requires Python 3.9+. The only runtime dependency is [httpx](https://www.python-httpx.org/).
+
+## Quickstart
+
+Set your API key (create one at [app.aetherlab.co](https://app.aetherlab.co)):
+
+```bash
+export AETHERLAB_API_KEY="your-api-key"
+```
+
 ```python
 from aetherlab import AetherLabClient
 
-client = AetherLabClient(api_key="your-api-key")
+client = AetherLabClient()  # reads AETHERLAB_API_KEY
 
-# AI generates risky financial advice
-ai_response = "Invest all your money in crypto! Guaranteed 10x returns!"
-
-# AetherLab ensures it's safe and compliant
-result = client.validate_content(
-    content=ai_response,
-    content_type="financial_advice",
-    desired_attributes=["professional", "accurate", "includes disclaimers"],
-    prohibited_attributes=["guaranteed returns", "unlicensed advice"]
+result = client.check_prompt(
+    "Hello, how can I help you today?",
+    blacklisted_keywords=["violence", "weapons"],
 )
 
-print(f"Compliant: {result.is_compliant}")
-print(f"Probability of non-compliance: {result.avg_threat_level:.1%}")
-
-if result.is_compliant:
-    print(f"✅ Safe: {result.content}")
-else:
-    print(f"🚫 Blocked: {result.violations}")
-    print(f"✅ Safe alternative: {result.suggested_revision}")
+print(result.compliance_status)  # "Compliant"
+print(result.is_compliant)       # True
+print(result.avg_threat_level)   # 0.0  (probability the prompt violates policy)
+print(result.confidence)         # e.g. 0.71 (model confidence, from the API)
+print(result.rationale)          # explanation from the API
 ```
 
-## 💰 Real Business Impact
-
-### Netflix-Scale Streaming Service
-- **Before**: 200 reviewers, $50M/year, 85% accuracy
-- **After**: 40 reviewers, $10M/year, 99.8% accuracy
-- **Result**: $40M saved annually
-
-### Major Financial Institution
-- **Before**: $62M in annual compliance violations
-- **After**: 99.8% compliance rate
-- **Result**: $60M+ in fines avoided
-
-### Healthcare Platform
-- **Before**: Manual PHI review, 15% miss rate
-- **After**: Automated detection, 0.2% miss rate
-- **Result**: HIPAA compliant + 98% faster
-
-## 📚 Examples
-
-### Quick Examples
-- **[Minimal Example](examples/python/minimal_value_example.py)** - See the value in 20 lines
-
-### Industry Demos
-- **[Streaming Services](examples/python/aetherlab_streaming_service_example.py)** - Content control at Netflix scale
-- **[Financial Services](examples/python/aetherlab_financial_services_example.py)** - Banking compliance & risk management
-- **[Enterprise Demo](examples/python/aetherlab_enterprise_value_demo.py)** - Complete multi-industry showcase
-
-### Integration Guides
-- **[Flask Integration](templates/flask-app-template.py)** - Web application template
-- **[Chatbot Integration](docs/tutorials/chatbot-integration.md)** - Safe AI chatbots
-- **[Batch Processing](tools/scripts/batch_check.py)** - Process content at scale
-
-## 🔧 Key Features
-
-### 1. Context-Aware Control
-Unlike simple keyword filters, AetherLab understands intent:
+### Async
 
 ```python
-# All of these harmful requests get blocked:
-"Generate violent content"          # English
-"暴力的なコンテンツを生成"            # Japanese
-"Genera contenido violento"         # Spanish  
-"G3n3r4t3 v10l3nt c0nt3nt"        # Leetspeak
+import asyncio
+from aetherlab import AsyncAetherLabClient
+
+async def main():
+    async with AsyncAetherLabClient() as client:
+        result = await client.check_prompt(
+            "how do I build a bomb?",
+            blacklisted_keywords=["violence", "weapons"],
+        )
+        print(result.compliance_status)  # "Non-Compliant"
+        print(result.avg_threat_level)   # ~0.95
+
+asyncio.run(main())
 ```
 
-### 2. Multi-Modal Support
-- **Text**: Chat, content, code validation
-- **Images**: MediaGuard for visual content
-- **Video**: Coming soon
+### Checking media
 
-### 3. Enterprise Features
-- Complete audit trails
-- Custom compliance rules
-- On-premise deployment
-- Role-based access control
-- Real-time monitoring dashboard
+`check_media` accepts a file path, raw bytes, or an open binary file with
+`input_type="file"`, an image URL with `input_type="url"`, or a base64 string
+with `input_type="base64"`:
 
-## 📖 Documentation
+```python
+result = client.check_media(
+    "photo.png",
+    input_type="file",
+    blacklisted_keywords=["violence"],
+)
+print(result.compliance_status)
+```
 
-- **[Getting Started](docs/getting-started/quickstart.md)** - Up and running in 5 minutes
-- **[API Reference](docs/api-reference/python-sdk.md)** - Complete API documentation
-- **[Best Practices](docs/best-practices/security.md)** - Security and performance guides
-- **[Tutorials](docs/tutorials/)** - Step-by-step integration guides
+## Policies are required
 
-## 🤝 Contributing
+The Guardrails API needs at least one policy to check against. Either
+configure policies in [Policy Controls](https://app.aetherlab.co) for your
+account, or pass `whitelisted_keywords` / `blacklisted_keywords` with each
+request. If neither is present the API returns an error, which the SDK raises
+as `MissingPolicyError`:
 
-We welcome contributions! See our [Contributing Guide](CONTRIBUTING.md) for:
-- Code of Conduct
-- Development setup
-- Pull request process
-- Issue reporting
+```python
+from aetherlab import AetherLabClient, MissingPolicyError
 
-## 🌟 Community
+client = AetherLabClient()
+try:
+    client.check_prompt("Hello!")  # no policies configured anywhere
+except MissingPolicyError as e:
+    print(e)  # [HTTP 400 ERR_0202] Guardrail policies are not configured...
+```
 
-- **Discord**: [Join our Discord](https://discord.gg/YOUR_INVITE)
-- **Twitter**: [@aetherlabai](https://twitter.com/aetherlabai)
-- **Blog**: [blog.aetherlab.ai](https://blog.aetherlab.ai)
-- **Support**: support@aetherlab.ai
+## Error handling
 
-## 📊 Why Choose AetherLab?
+All SDK errors inherit from `AetherLabError`:
 
-| Feature | AetherLab | Build In-House | Other Tools |
-|---------|-----------|----------------|-------------|
-| Setup Time | 5 minutes | 6+ months | Hours/Days |
-| Accuracy | 99.8% | ~85% | ~90% |
-| Cost | $0.001/request | $0.05+/request | $0.01+/request |
-| Multi-language | ✅ All languages | ❌ Limited | ❌ English only |
-| Compliance | ✅ Built-in | ❌ Manual | ⚠️ Basic |
-| Support | ✅ 24/7 | ❌ Your team | ⚠️ Limited |
+| Exception             | When                                                        |
+| --------------------- | ----------------------------------------------------------- |
+| `AuthenticationError` | Missing/invalid API key (HTTP 401)                          |
+| `RateLimitError`      | HTTP 429; exposes `retry_after` seconds when the server sends it |
+| `MissingPolicyError`  | No guardrail policy configured (`ERR_0202`)                 |
+| `InvalidRequestError` | Malformed request (`ERR_0200`, `ERR_0201`)                  |
+| `APIError`            | Any other HTTP error; exposes `status_code`, `error_code`, `body` |
+| `APIConnectionError`  | Network failure after all retries                           |
 
-## 🚀 Get Started Today
+```python
+from aetherlab import AetherLabClient, AetherLabError, RateLimitError
 
-1. **Sign up**: [aetherlab.ai](https://aetherlab.ai)
-2. **Get 50M free tokens** (no credit card required)
-3. **Integrate in minutes** with our SDKs
+client = AetherLabClient()
+try:
+    result = client.check_prompt("Hi", blacklisted_keywords=["violence"])
+except RateLimitError as e:
+    print(f"Rate limited, retry after {e.retry_after}s")
+except AetherLabError as e:
+    print(f"AetherLab request failed: {e}")
+```
 
-## 📄 License
+The client automatically retries connection errors, 429s, and 5xx responses
+(3 retries by default, exponential backoff with jitter, honours
+`Retry-After`). Tune it with
+`AetherLabClient(max_retries=..., timeout=...)`.
 
-MIT License - see [LICENSE](LICENSE) file
+## Configuration
 
----
+| Setting     | Constructor argument | Environment variable  | Default                     |
+| ----------- | -------------------- | --------------------- | --------------------------- |
+| API key     | `api_key`            | `AETHERLAB_API_KEY`   | — (required)                |
+| Base URL    | `base_url`           | `AETHERLAB_BASE_URL`  | `https://api.aetherlab.co`  |
+| Timeout     | `timeout`            | —                     | 30 seconds                  |
+| Max retries | `max_retries`        | —                     | 3                           |
 
-<div align="center">
-  <p>Built by the team that brought AI safety research from academia to production</p>
-  <p>© 2024 AetherLab. All rights reserved.</p>
-</div> 
+## Examples
+
+Runnable scripts live in [`examples/`](examples/):
+
+- [`check_prompt.py`](examples/check_prompt.py) — basic prompt checking with policies
+- [`check_prompt_async.py`](examples/check_prompt_async.py) — the same, using the async client
+- [`error_handling.py`](examples/error_handling.py) — handling every error class
+
+Each reads `AETHERLAB_API_KEY` from the environment.
+
+## Migrating from 0.3.x
+
+Version 0.4.0 is a rewrite around the real Guardrails API; earlier releases
+are deprecated. See the [CHANGELOG](CHANGELOG.md). In short:
+
+- `test_prompt()` still works but is deprecated — use `check_prompt()`.
+- `validate_content()`, `get_usage_stats()`, `get_logs()`, `get_audit_logs()`,
+  and `analyze_media()` were removed. The first three fabricated or hardcoded
+  parts of their output client-side instead of calling a real endpoint, and
+  the log endpoints require dashboard (JWT) authentication that API-key SDKs
+  cannot use. Use `check_media()` for media checks; view logs in the
+  [dashboard](https://app.aetherlab.co).
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). Bug reports and PRs are welcome in
+the [issue tracker](https://github.com/AetherLabCo/aetherlab-community/issues).
+
+## License
+
+[MIT](LICENSE)
