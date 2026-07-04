@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "aetherlab"
-version = "0.4.0"
-description = "Official Python SDK for the AetherLab Guardrails API"
+version = "0.4.1"
+description = "Official AetherLab Python SDK - AI guardrails, LLM safety, and content moderation via the AetherLab compliance API."
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
@@ -18,16 +18,22 @@ dependencies = [
 ]
 keywords = [
     "aetherlab",
-    "ai",
+    "ai guardrails",
+    "llm safety",
+    "content moderation",
+    "ai compliance",
+    "ai safety api",
     "guardrails",
-    "compliance",
-    "safety",
-    "llm",
-    "content-moderation",
+    "prompt injection",
+    "llm security",
+    "responsible ai",
+    "trust and safety",
+    "content filtering",
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.9",
@@ -35,6 +41,8 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Security",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Typing :: Typed",
 ]
@@ -81,3 +89,5 @@ select = ["E", "F", "W", "I", "UP", "B", "SIM"]
 [tool.mypy]
 strict = true
 files = ["src/aetherlab"]
+warn_unreachable = true
+enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]

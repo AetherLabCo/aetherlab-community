@@ -1,12 +1,16 @@
 # AetherLab Python SDK
 
-[![CI](https://github.com/AetherLabCo/aetherlab-community/actions/workflows/ci.yml/badge.svg)](https://github.com/AetherLabCo/aetherlab-community/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/aetherlab)](https://pypi.org/project/aetherlab/)
+[![Python versions](https://img.shields.io/pypi/pyversions/aetherlab)](https://pypi.org/project/aetherlab/)
+[![CI](https://github.com/AetherLabCo/aetherlab-community/actions/workflows/ci.yml/badge.svg)](https://github.com/AetherLabCo/aetherlab-community/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-The official Python SDK for the [AetherLab](https://aetherlab.co) Guardrails API.
-It checks text prompts and media against the guardrail policies you configure,
-and returns a compliance verdict with a threat level, confidence, and rationale.
+The official Python SDK for [AetherLab](https://aetherlab.co) - AI guardrails,
+LLM safety, and content moderation for production AI applications. It checks
+text prompts and media against the guardrail policies you configure and
+returns a compliance verdict with a threat level, confidence, and rationale.
+Built for developers adding a safety and compliance layer to LLM apps,
+chatbots, and agents.
 
 - **Website:** https://aetherlab.co
 - **Dashboard (API keys & Policy Controls):** https://app.aetherlab.co
@@ -137,18 +141,18 @@ The client automatically retries connection errors, 429s, and 5xx responses
 
 ## Examples
 
-Runnable scripts live in [`examples/`](examples/):
+Runnable scripts live in [`examples/`](https://github.com/AetherLabCo/aetherlab-community/tree/main/examples):
 
-- [`check_prompt.py`](examples/check_prompt.py) — basic prompt checking with policies
-- [`check_prompt_async.py`](examples/check_prompt_async.py) — the same, using the async client
-- [`error_handling.py`](examples/error_handling.py) — handling every error class
+- [`check_prompt.py`](https://github.com/AetherLabCo/aetherlab-community/blob/main/examples/check_prompt.py) — basic prompt checking with policies
+- [`check_prompt_async.py`](https://github.com/AetherLabCo/aetherlab-community/blob/main/examples/check_prompt_async.py) — the same, using the async client
+- [`error_handling.py`](https://github.com/AetherLabCo/aetherlab-community/blob/main/examples/error_handling.py) — handling every error class
 
 Each reads `AETHERLAB_API_KEY` from the environment.
 
 ## Migrating from 0.3.x
 
 Version 0.4.0 is a rewrite around the real Guardrails API; earlier releases
-are deprecated. See the [CHANGELOG](CHANGELOG.md). In short:
+are deprecated. See the [CHANGELOG](https://github.com/AetherLabCo/aetherlab-community/blob/main/CHANGELOG.md). In short:
 
 - `test_prompt()` still works but is deprecated — use `check_prompt()`.
 - `validate_content()`, `get_usage_stats()`, `get_logs()`, `get_audit_logs()`,
@@ -160,9 +164,9 @@ are deprecated. See the [CHANGELOG](CHANGELOG.md). In short:
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). Bug reports and PRs are welcome in
+See [CONTRIBUTING.md](https://github.com/AetherLabCo/aetherlab-community/blob/main/CONTRIBUTING.md). Bug reports and PRs are welcome in
 the [issue tracker](https://github.com/AetherLabCo/aetherlab-community/issues).
 
 ## License
 
-[MIT](LICENSE)
+[MIT](https://github.com/AetherLabCo/aetherlab-community/blob/main/LICENSE)

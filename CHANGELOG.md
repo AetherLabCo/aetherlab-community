@@ -2,6 +2,25 @@
 
 All notable changes to the AetherLab Python SDK are documented here.
 
+## [0.4.1] - 2026-07-03
+
+Packaging/metadata polish and small robustness fixes. No API changes.
+
+### Changed
+- PyPI metadata: search-friendly summary, expanded keywords, and a fuller
+  classifier set (MIT license, AI and security topics).
+- README: added a Python-versions badge, clarified the intro, and switched
+  relative links to absolute URLs so they work on the PyPI project page.
+- Tightened the mypy configuration (`warn_unreachable`, extra error codes).
+
+### Fixed
+- Error responses without a `message` field (e.g. `{"error": true, ...}`) no
+  longer produce the literal message "True"; the SDK now falls back to the
+  HTTP reason phrase.
+- A non-finite `Retry-After` header (e.g. `inf`) no longer crashes the retry
+  sleep with `OverflowError`; it is ignored and normal backoff is used.
+- Removed an unused `image` parameter from the internal media form builder.
+
 ## [0.4.0] - 2026-07-03
 
 Complete rework of the SDK around the real Guardrails API. Releases prior to
