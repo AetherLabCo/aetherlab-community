@@ -375,6 +375,7 @@ def test_prompt_convenience_uses_one_batch_call_and_stable_ids(client):
     assert first_requests[0]["custom_id"] == second_body["requests"][0]["custom_id"]
     assert first_requests[0]["body"]["blacklisted_keyword"] == "weapons"
     assert first_requests[0]["body"]["risk_tolerance"] == "medium"
+    assert "environment" not in first_requests[0]["body"]
     assert first_requests[1]["custom_id"] == "chosen"
     assert first_requests[1]["body"]["reasoning_mode"] == "high"
 
@@ -400,6 +401,8 @@ def test_media_convenience_accepts_https_and_file_ids_only(client):
     assert requests[0]["body"]["image"].startswith("https://")
     assert requests[1]["body"]["input_type"] == "file"
     assert requests[1]["body"]["file_id"] == "file_media_123"
+    assert "environment" not in requests[1]["body"]
+    assert "output_type" not in requests[1]["body"]
 
     with pytest.raises(ValueError, match="HTTPS"):
         client.check_media_batch(["http://example.com/image.png"], idempotency_key="bad")

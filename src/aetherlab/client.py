@@ -128,6 +128,8 @@ def _prompt_batch_defaults(
     shared.pop("user_prompt")
     if defaults is not None:
         shared.update(defaults)
+    # Batch environment is selected by the x-api-key, not an item body field.
+    shared.pop("environment", None)
     return shared
 
 
@@ -153,6 +155,10 @@ def _media_batch_defaults(
     shared.pop("input_type")
     if defaults is not None:
         shared.update(defaults)
+    # Batch items return compliance decisions only. Environment comes from
+    # x-api-key and output_type is a scalar MediaGuard compatibility field.
+    shared.pop("environment", None)
+    shared.pop("output_type", None)
     return shared
 
 
