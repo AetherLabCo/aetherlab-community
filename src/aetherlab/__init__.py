@@ -15,7 +15,21 @@ from .exceptions import (
     MissingPolicyError,
     RateLimitError,
 )
-from .models import ComplianceResult, MediaComplianceResult
+from .models import (
+    BatchEndpoint,
+    BatchFile,
+    BatchFilePurpose,
+    BatchItemError,
+    BatchItemStatus,
+    BatchJob,
+    BatchRequestCounts,
+    BatchResultItem,
+    BatchResultsPage,
+    BatchStatus,
+    BatchUploadPurpose,
+    ComplianceResult,
+    MediaComplianceResult,
+)
 
 __all__ = [
     "__version__",
@@ -30,4 +44,15 @@ __all__ = [
     "RateLimitError",
     "ComplianceResult",
     "MediaComplianceResult",
+    "BatchEndpoint",
+    "BatchFilePurpose",
+    "BatchUploadPurpose",
+    "BatchStatus",
+    "BatchItemStatus",
+    "BatchFile",
+    "BatchRequestCounts",
+    "BatchJob",
+    "BatchItemError",
+    "BatchResultItem",
+    "BatchResultsPage",
 ]

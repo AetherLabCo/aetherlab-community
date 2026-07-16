@@ -133,8 +133,13 @@ def should_retry_response(response: httpx.Response) -> bool:
 def _extract_error(body: Any, response: httpx.Response) -> tuple[str | None, str]:
     """Pull (error_code, message) out of an error response body."""
     if isinstance(body, dict):
-        error_code = body.get("error_code")
-        message = body.get("message") or body.get("error")
+        nested = body.get("error")
+        if isinstance(nested, dict):
+            error_code = nested.get("code") or nested.get("error_code")
+            message = nested.get("message") or nested.get("detail")
+        else:
+            error_code = body.get("error_code")
+            message = body.get("message") or nested
         if not (isinstance(message, str) and message.strip()):
             # e.g. {"error": true} without a message: fall back to the HTTP
             # reason phrase instead of the string "True".
@@ -210,6 +215,13 @@ def coerce_file(file: FileSource) -> tuple[str, bytes]:
     if isinstance(file, str):
         with open(file, "rb") as handle:
             return (os.path.basename(file) or "upload", handle.read())
+    if isinstance(file, os.PathLike):
+        path = os.fspath(file)
+        with open(path, "rb") as handle:
+            filename = os.path.basename(path)
+            if isinstance(filename, bytes):
+                filename = os.fsdecode(filename)
+            return (filename or "upload", handle.read())
     content = file.read()
     if isinstance(content, str):
         content = content.encode("utf-8")
