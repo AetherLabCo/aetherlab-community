@@ -1,26 +1,32 @@
-# AetherLab Python SDK 0.5.1
+# AetherLab Python SDK 0.5.2
 
-Version 0.5.1 is a compatibility patch for the server-side batch helpers
-introduced in 0.5.0.
+Version 0.5.2 is a MediaGuard compatibility patch for the scalar Python
+clients and the end-to-end SDK notebook.
 
 ## Fixed
 
-- Mapped `check_prompt_batch()` items now accept all documented prompt source
-  names: `input`, `prompt`, and `user_prompt`.
-- Ambiguous mapped items that provide more than one prompt source fail
-  locally before any request is sent.
-- Plain-string prompt batches, media batches, scalar methods, JSONL resource
-  methods, polling, and typed results remain unchanged.
+- `AetherLabClient.check_media()` and
+  `AsyncAetherLabClient.check_media()` now accept `industry="nsfw"` or
+  `industry="scam"` and forward the selected preset in the multipart request.
+  Published 0.5.1 did not expose or serialize this production API field.
+- The notebook's scalar MediaGuard example now defines the editable
+  `MEDIA_TEST_URL` beside the call, passes that variable to `check_media()`,
+  and keeps `media_result = None` separate for the returned verdict. This
+  prevents an assigned URL from being ignored and then overwritten.
+- The public notebook remains saved in safe mode with a benign URL, empty
+  outputs, and no credentials or local filesystem paths.
 
 ## Compatibility
 
-`check_prompt()`, `check_media()`, `test_prompt()`, existing models, exception
-mapping, retry behavior, `https://api.aetherlab.co`, and `x-api-key`
-authentication are unchanged. Version 0.5.1 is a drop-in replacement for
-0.5.0.
+The `industry` argument is additive and optional. Existing keyword-based
+MediaGuard calls, PromptGuard calls, batch helpers, models, exception mapping,
+retry behavior, `https://api.aetherlab.co`, and `x-api-key` authentication are
+unchanged.
 
 ## Validation
 
-- Unit, lint, type, and distribution builds pass across Python 3.9–3.13.
-- A production canary using the documented mapped `input` form completed
-  successfully.
+- Unit tests, Ruff, mypy, wheel/sdist builds, and Twine metadata checks pass.
+- Sync and async multipart regression tests verify that `industry` is sent.
+- Safe-mode notebook execution performs no production calls.
+- An editable 0.5.2 production canary using `industry="nsfw"` completed with a
+  Compliant verdict and threat level 0.
