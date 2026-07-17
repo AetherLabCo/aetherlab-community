@@ -82,6 +82,9 @@ result = client.check_media(
 print(result.compliance_status)
 ```
 
+MediaGuard also accepts an enabled industry policy preset instead of explicit
+keyword lists, for example `industry="nsfw"`.
+
 ## Server-side batches
 
 Version 0.5.0 adds server-side prompt and media jobs. Batch helpers submit one
@@ -190,9 +193,10 @@ result artifacts expire after seven days.
 
 The Guardrails API needs at least one policy to check against. Either
 configure policies in [Policy Controls](https://app.aetherlab.co) for your
-account, or pass `whitelisted_keywords` / `blacklisted_keywords` with each
-request. If neither is present the API returns an error, which the SDK raises
-as `MissingPolicyError`:
+account, pass `whitelisted_keywords` / `blacklisted_keywords` with each
+request, or pass an enabled `industry` preset to `check_media()`. If none is
+present the API returns an error, which the SDK raises as
+`MissingPolicyError`:
 
 ```python
 from aetherlab import AetherLabClient, MissingPolicyError

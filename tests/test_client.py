@@ -359,6 +359,25 @@ def test_check_media_url_is_multipart(client):
     assert b"https://example.com/cat.png" in body
 
 
+@respx.mock
+def test_check_media_url_sends_industry_without_keyword_lists(client):
+    route = respx.post(f"{BASE}/v1/guardrails/media").mock(
+        return_value=httpx.Response(200, json=MEDIA_OK)
+    )
+    client.check_media(
+        "https://example.com/cat.png",
+        input_type="url",
+        industry="nsfw",
+    )
+    body = route.calls.last.request.read()
+    assert b'name="image"' in body
+    assert b"https://example.com/cat.png" in body
+    assert b'name="industry"' in body
+    assert b"nsfw" in body
+    assert b'name="whitelisted_keyword"' not in body
+    assert b'name="blacklisted_keyword"' not in body
+
+
 def test_check_media_rejects_bad_input_type(client):
     with pytest.raises(ValueError):
         client.check_media(b"x", input_type="hologram")

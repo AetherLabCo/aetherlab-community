@@ -456,6 +456,7 @@ class AetherLabClient:
         output_type: str = "json",
         whitelisted_keywords: KeywordList = None,
         blacklisted_keywords: KeywordList = None,
+        industry: str | None = None,
         reasoning_mode: str | None = None,
         risk_tolerance: str | None = None,
         environment: str | None = None,
@@ -463,8 +464,8 @@ class AetherLabClient:
     ) -> MediaComplianceResult:
         """Check an image against your guardrail policies.
 
-        Calls ``POST /v1/guardrails/media`` (multipart). Like
-        :meth:`check_prompt`, the API requires at least one policy.
+        Calls ``POST /v1/guardrails/media`` (multipart). The API requires
+        explicit keywords, an industry preset, or configured account policies.
 
         Args:
             file: The media to check. With ``input_type="file"`` this is a
@@ -476,6 +477,7 @@ class AetherLabClient:
                 (default).
             whitelisted_keywords: Content descriptions that are allowed.
             blacklisted_keywords: Content descriptions that are not allowed.
+            industry: Optional policy preset (``"nsfw"`` or ``"scam"``).
             reasoning_mode: Optional reasoning effort (``"low"``/``"medium"``/
                 ``"high"``).
             risk_tolerance: Optional risk tolerance (``"low"``/``"medium"``/
@@ -493,6 +495,7 @@ class AetherLabClient:
             output_type=output_type,
             whitelisted_keywords=whitelisted_keywords,
             blacklisted_keywords=blacklisted_keywords,
+            industry=industry,
             reasoning_mode=reasoning_mode,
             risk_tolerance=risk_tolerance,
             environment=environment,
@@ -1152,6 +1155,7 @@ class AsyncAetherLabClient:
         output_type: str = "json",
         whitelisted_keywords: KeywordList = None,
         blacklisted_keywords: KeywordList = None,
+        industry: str | None = None,
         reasoning_mode: str | None = None,
         risk_tolerance: str | None = None,
         environment: str | None = None,
@@ -1163,6 +1167,7 @@ class AsyncAetherLabClient:
             output_type=output_type,
             whitelisted_keywords=whitelisted_keywords,
             blacklisted_keywords=blacklisted_keywords,
+            industry=industry,
             reasoning_mode=reasoning_mode,
             risk_tolerance=risk_tolerance,
             environment=environment,

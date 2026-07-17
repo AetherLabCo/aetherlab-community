@@ -2,6 +2,12 @@
 
 All notable changes to the AetherLab Python SDK are documented here.
 
+## Unreleased
+
+### Fixed
+- `check_media()` now accepts and forwards the MediaGuard `industry` preset in
+  both synchronous and asynchronous clients.
+
 ## [0.5.1] - 2026-07-17
 
 ### Fixed
