@@ -19,7 +19,6 @@ async def main() -> None:
     async with AsyncAetherLabClient() as client:
         job = await client.check_media_batch(
             media,
-            idempotency_key="example-media-batch-v1",
             blacklisted_keywords=["violence"],
             metadata={"example": "batch_media_async"},
         )

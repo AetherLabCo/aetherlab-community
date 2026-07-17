@@ -16,9 +16,14 @@ All notable changes to the AetherLab Python SDK are documented here.
 - Bounded `wait_for_batch()` polling with capped backoff, overall timeout, and
   caller-controlled cancellation.
 - Additive `check_prompt_batch()` and `check_media_batch()` helpers. They
-  create one server-side job, merge shared defaults with per-item bodies, and
-  generate deterministic custom IDs only when omitted. Media batches accept
-  HTTPS URLs and uploaded file IDs.
+  use the recommended guardrail-specific routes, create one server-side job,
+  merge shared defaults with per-item bodies, and generate deterministic
+  custom IDs only when omitted. Media batches accept HTTPS URLs, uploaded file
+  IDs, and returned `BatchFile` objects.
+- Convenience methods derive a stable payload-based idempotency key when one
+  is omitted, so an uncertain submission can be retried safely. Explicit keys
+  remain supported, and `create_batch()` preserves the advanced generic
+  `/v1/batches` contract.
 - Typed `BatchFile`, `BatchRequestCounts`, `BatchJob`, `BatchItemError`,
   `BatchResultItem`, and `BatchResultsPage` models, all exported at package
   level and retaining raw response payloads.
@@ -27,6 +32,9 @@ All notable changes to the AetherLab Python SDK are documented here.
 - Package version is now 0.5.0. Existing `check_prompt()`, `check_media()`, and
   the deprecated `test_prompt()` alias retain their 0.4.1 signatures and wire
   behavior.
+- The simplest batch call is now
+  `client.check_prompt_batch(["first", "second"])`; endpoint and completion
+  window are implicit on convenience routes.
 
 ### Validation
 - Inline submissions enforce the 1,000-request/10 MiB limits; batch JSONL
