@@ -1,41 +1,26 @@
-# AetherLab Python SDK 0.5.0
+# AetherLab Python SDK 0.5.1
 
-Version 0.5.0 adds first-class server-side batch processing while preserving
-the complete 0.4.1 scalar API.
+Version 0.5.1 is a compatibility patch for the server-side batch helpers
+introduced in 0.5.0.
 
-## Highlights
+## Fixed
 
-- Submit the simplest prompt job with
-  `client.check_prompt_batch(["first", "second"])`; media has the analogous
-  URL/uploaded-file call.
-- `check_prompt_batch()` and `check_media_batch()` use the recommended
-  guardrail-specific routes, generate stable item correlation IDs, and derive
-  a stable retry key when callers omit one.
-- Use `create_batch()` unchanged for advanced provider-compatible inline or
-  JSONL workflows.
-- Upload JSONL inputs and batch-safe media with raw `x-api-key`
-  authentication through the new file methods.
-- Poll jobs with bounded backoff, cancel active jobs, and delete terminal
-  jobs.
-- Read unordered results as cursor-paginated JSON or NDJSON, correlated by
-  each input's `custom_id`.
-- Use the same API from `AetherLabClient` and `AsyncAetherLabClient`.
+- Mapped `check_prompt_batch()` items now accept all documented prompt source
+  names: `input`, `prompt`, and `user_prompt`.
+- Ambiguous mapped items that provide more than one prompt source fail
+  locally before any request is sent.
+- Plain-string prompt batches, media batches, scalar methods, JSONL resource
+  methods, polling, and typed results remain unchanged.
 
 ## Compatibility
 
 `check_prompt()`, `check_media()`, `test_prompt()`, existing models, exception
 mapping, retry behavior, `https://api.aetherlab.co`, and `x-api-key`
-authentication are unchanged. Batch polling is available only through the v1
-batch endpoints. Existing explicit custom IDs, per-item bodies/defaults,
-idempotency keys, and low-level resource methods remain supported.
+authentication are unchanged. Version 0.5.1 is a drop-in replacement for
+0.5.0.
 
-## Operational limits
+## Validation
 
-- Inline: 1,000 requests or 10 MiB.
-- JSONL: 50,000 requests or 200 MiB.
-- Completion window: exactly 24 hours.
-- Result retention: seven days.
-- Batch media: HTTPS URL or uploaded `guardrail_media` file ID; embedded base64
-  is not supported.
-
-This release has not been published to TestPyPI or PyPI.
+- Unit, lint, type, and distribution builds pass across Python 3.9–3.13.
+- A production canary using the documented mapped `input` form completed
+  successfully.

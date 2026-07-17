@@ -2,7 +2,7 @@
 
 All notable changes to the AetherLab Python SDK are documented here.
 
-## [Unreleased]
+## [0.5.1] - 2026-07-17
 
 ### Fixed
 - Mapped `check_prompt_batch()` items now accept the documented `input` alias
