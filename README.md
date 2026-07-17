@@ -249,11 +249,20 @@ Runnable scripts live in [`examples/`](https://github.com/AetherLabCo/aetherlab-
 
 - [`check_prompt.py`](https://github.com/AetherLabCo/aetherlab-community/blob/main/examples/check_prompt.py) — basic prompt checking with policies
 - [`check_prompt_async.py`](https://github.com/AetherLabCo/aetherlab-community/blob/main/examples/check_prompt_async.py) — the same, using the async client
-- [`batch_prompt.py`](https://github.com/AetherLabCo/aetherlab-community/blob/main/examples/batch_prompt.py) — server-side prompt submission and NDJSON results
+- [`check_media.py`](https://github.com/AetherLabCo/aetherlab-community/blob/main/examples/check_media.py) — scalar image checking by HTTPS URL
+- [`batch_prompt.py`](https://github.com/AetherLabCo/aetherlab-community/blob/main/examples/batch_prompt.py) — inline server-side prompt batch and NDJSON results
+- [`batch_prompt_jsonl.py`](https://github.com/AetherLabCo/aetherlab-community/blob/main/examples/batch_prompt_jsonl.py) — end-to-end JSONL workflow: write, upload, create, poll, results
 - [`batch_media_async.py`](https://github.com/AetherLabCo/aetherlab-community/blob/main/examples/batch_media_async.py) — async media batch with URL/file-ID inputs
 - [`error_handling.py`](https://github.com/AetherLabCo/aetherlab-community/blob/main/examples/error_handling.py) — handling every error class
 
 Each reads `AETHERLAB_API_KEY` from the environment.
+
+For an interactive walkthrough of every scalar and batch path — including
+credential setup, both inline and JSONL submission for PromptGuard and
+MediaGuard, polling, result correlation, and cleanup — open
+[`examples/AetherLab_SDK_End_to_End.ipynb`](https://github.com/AetherLabCo/aetherlab-community/blob/main/examples/AetherLab_SDK_End_to_End.ipynb)
+in Jupyter. It defaults to a safe no-call mode; set `RUN_LIVE_TESTS = True`
+inside the notebook to run against production.
 
 ## Migrating from 0.3.x
 
