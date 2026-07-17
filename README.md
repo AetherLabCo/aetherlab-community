@@ -92,6 +92,13 @@ or `check_media` calls. The recommended PromptGuard call is exactly:
 job = client.check_prompt_batch(["first", "second"])
 ```
 
+The submission call returns queued job metadata, not compliance verdicts.
+Call `wait_for_batch()` to poll the job to a terminal state, then retrieve its
+item results as shown below. Small batches commonly complete in about 1–2
+minutes; larger batches can take longer depending on item count, reasoning
+mode, and service load. The supported 24-hour processing window is not a
+completion-time SLA.
+
 The SDK uses `POST /v1/guardrails/prompt/batches`, where the endpoint and
 24-hour window are implicit. Shared settings and per-item overrides remain
 available without changing the simple case:
