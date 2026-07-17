@@ -7,7 +7,7 @@ import httpx
 import pytest
 import respx
 
-from aetherlab import AetherLabClient, APIError, BatchJob, BatchResultsPage
+from aetherlab import AetherLabClient, APIError, BatchFile, BatchJob, BatchResultsPage
 
 BASE = "https://unit.test"
 
@@ -340,8 +340,11 @@ def test_wait_for_batch_enforces_overall_timeout(client, monkeypatch):
 
 @respx.mock
 def test_prompt_convenience_uses_one_batch_call_and_stable_ids(client):
-    batch = respx.post(f"{BASE}/v1/batches").mock(
+    batch = respx.post(f"{BASE}/v1/guardrails/prompt/batches").mock(
         return_value=httpx.Response(201, json=batch_payload())
+    )
+    generic = respx.post(f"{BASE}/v1/batches").mock(
+        return_value=httpx.Response(500)
     )
     scalar = respx.post(f"{BASE}/v1/guardrails/prompt").mock(
         return_value=httpx.Response(500)
@@ -355,54 +358,89 @@ def test_prompt_convenience_uses_one_batch_call_and_stable_ids(client):
     ]
     first = client.check_prompt_batch(
         prompts,
-        idempotency_key="prompt-idem",
         blacklisted_keywords=["weapons"],
         defaults={"risk_tolerance": "medium"},
     )
+    first_key = batch.calls.last.request.headers["idempotency-key"]
     first_body = json.loads(batch.calls.last.request.content)
     second = client.check_prompt_batch(
         requests=prompts,
-        idempotency_key="prompt-idem-2",
         blacklisted_keywords=["weapons"],
         defaults={"risk_tolerance": "medium"},
     )
+    second_key = batch.calls.last.request.headers["idempotency-key"]
     second_body = json.loads(batch.calls.last.request.content)
 
     assert first.status == second.status == "queued"
     assert scalar.call_count == 0
+    assert generic.call_count == 0
     assert batch.call_count == 2
-    first_requests = first_body["requests"]
-    assert first_requests[0]["custom_id"] == second_body["requests"][0]["custom_id"]
-    assert first_requests[0]["body"]["blacklisted_keyword"] == "weapons"
-    assert first_requests[0]["body"]["risk_tolerance"] == "medium"
-    assert "environment" not in first_requests[0]["body"]
-    assert first_requests[1]["custom_id"] == "chosen"
-    assert first_requests[1]["body"]["reasoning_mode"] == "high"
+    assert first_key == second_key
+    first_items = first_body["items"]
+    assert first_items[0]["custom_id"] == second_body["items"][0]["custom_id"]
+    assert first_body["settings"]["blacklisted_keyword"] == "weapons"
+    assert first_body["settings"]["risk_tolerance"] == "medium"
+    assert "environment" not in first_body["settings"]
+    assert first_items[1]["custom_id"] == "chosen"
+    assert first_items[1]["reasoning_mode"] == "high"
+
+
+@respx.mock
+def test_simplest_prompt_batch_call_is_stable_and_uses_facade(client):
+    route = respx.post(f"{BASE}/v1/guardrails/prompt/batches").mock(
+        return_value=httpx.Response(201, json=batch_payload())
+    )
+
+    client.check_prompt_batch(["first", "second"])
+    first_request = route.calls.last.request
+    client.check_prompt_batch(["first", "second"])
+    second_request = route.calls.last.request
+
+    first_body = json.loads(first_request.content)
+    second_body = json.loads(second_request.content)
+    assert [item["input"] for item in first_body["items"]] == ["first", "second"]
+    assert first_body["items"] == second_body["items"]
+    assert (
+        first_request.headers["idempotency-key"]
+        == second_request.headers["idempotency-key"]
+    )
 
 
 @respx.mock
 def test_media_convenience_accepts_https_and_file_ids_only(client):
-    route = respx.post(f"{BASE}/v1/batches").mock(
+    route = respx.post(f"{BASE}/v1/guardrails/media/batches").mock(
         return_value=httpx.Response(
             201,
             json=batch_payload(endpoint="/v1/guardrails/media"),
         )
     )
+    uploaded = BatchFile.from_response(
+        {
+            "id": "c62f8af0-a76c-4cdf-97ad-6f1498f00669",
+            "filename": "stored.png",
+            "purpose": "guardrail_media",
+            "bytes": 5,
+        }
+    )
     client.check_media_batch(
         items=[
             "https://example.com/image.png",
-            {"custom_id": "stored", "file_id": "file_media_123"},
+            {
+                "custom_id": "stored",
+                "file_id": "50fd109f-4c3a-42b7-92be-14c1d8f89111",
+            },
+            uploaded,
         ],
         idempotency_key="media-idem",
         blacklisted_keywords=["violence"],
     )
-    requests = json.loads(route.calls.last.request.content)["requests"]
-    assert requests[0]["body"]["input_type"] == "url"
-    assert requests[0]["body"]["image"].startswith("https://")
-    assert requests[1]["body"]["input_type"] == "file"
-    assert requests[1]["body"]["file_id"] == "file_media_123"
-    assert "environment" not in requests[1]["body"]
-    assert "output_type" not in requests[1]["body"]
+    body = json.loads(route.calls.last.request.content)
+    assert body["items"][0]["url"].startswith("https://")
+    assert body["items"][1]["file_id"] == "50fd109f-4c3a-42b7-92be-14c1d8f89111"
+    assert body["items"][2]["file_id"] == uploaded.id
+    assert "environment" not in body["settings"]
+    assert "output_type" not in body["settings"]
+    assert body["settings"]["blacklisted_keyword"] == "violence"
 
     with pytest.raises(ValueError, match="HTTPS"):
         client.check_media_batch(["http://example.com/image.png"], idempotency_key="bad")
