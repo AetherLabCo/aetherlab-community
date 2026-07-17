@@ -2,6 +2,40 @@
 
 All notable changes to the AetherLab Python SDK are documented here.
 
+## [0.5.0] - 2026-07-16
+
+### Added
+- Raw API-key file methods for batch JSONL and guardrail media uploads:
+  `upload_file()`, `retrieve_file()`, and `delete_file()`, with matching async
+  methods.
+- Full server-side batch lifecycle: `create_batch()`, `list_batches()`,
+  `retrieve_batch()`, `cancel_batch()`, and terminal-only `delete_batch()`.
+- Cursor-paginated JSON results plus NDJSON download and parsed sync/async
+  iteration. Results retain their `custom_id` because server ordering is not
+  significant.
+- Bounded `wait_for_batch()` polling with capped backoff, overall timeout, and
+  caller-controlled cancellation.
+- Additive `check_prompt_batch()` and `check_media_batch()` helpers. They
+  create one server-side job, merge shared defaults with per-item bodies, and
+  generate deterministic custom IDs only when omitted. Media batches accept
+  HTTPS URLs and uploaded file IDs.
+- Typed `BatchFile`, `BatchRequestCounts`, `BatchJob`, `BatchItemError`,
+  `BatchResultItem`, and `BatchResultsPage` models, all exported at package
+  level and retaining raw response payloads.
+
+### Changed
+- Package version is now 0.5.0. Existing `check_prompt()`, `check_media()`, and
+  the deprecated `test_prompt()` alias retain their 0.4.1 signatures and wire
+  behavior.
+
+### Validation
+- Inline submissions enforce the 1,000-request/10 MiB limits; batch JSONL
+  uploads enforce 50,000 lines/200 MiB.
+- The SDK rejects missing or duplicate custom IDs, endpoint/body mismatches,
+  mutually exclusive inline/file forms, unsupported batch base64 media, an
+  invalid completion window, and known invalid cancel/delete state
+  transitions before the corresponding network request.
+
 ## [0.4.1] - 2026-07-03
 
 Packaging/metadata polish and small robustness fixes. No API changes.

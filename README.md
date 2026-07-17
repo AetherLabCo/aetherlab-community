@@ -82,6 +82,89 @@ result = client.check_media(
 print(result.compliance_status)
 ```
 
+## Server-side batches
+
+Version 0.5.0 adds server-side prompt and media jobs. Batch helpers submit one
+job and return a `BatchJob`; they do not fan out into repeated `check_prompt`
+or `check_media` calls.
+
+```python
+job = client.check_prompt_batch(
+    [
+        "A normal support message",
+        {
+            "custom_id": "ticket-42",
+            "body": {
+                "user_prompt": "A per-item prompt",
+                "reasoning_mode": "high",
+            },
+        },
+    ],
+    idempotency_key="support-review-2026-07-16",
+    blacklisted_keywords=["violence", "weapons"],
+    defaults={"risk_tolerance": "medium"},
+    metadata={"dataset": "support-review"},
+)
+
+job = client.wait_for_batch(job, timeout=900)
+for item in client.iter_batch_results(job.id):
+    # Results are unordered: always correlate them by custom_id.
+    if item.status == "succeeded":
+        print(item.custom_id, item.result.compliance_status)
+    else:
+        print(item.custom_id, item.error)
+```
+
+Each inline request has a unique `custom_id` and `body`. The convenience
+methods accept explicit IDs as shown above and generate deterministic IDs only
+when an item omits one. Shared defaults are merged first and each item's body
+wins on conflicts. `"Compliant"` and `"Non-Compliant"` are both successful
+guardrail results; transport or validation failures use an item failure state.
+
+For larger datasets, upload UTF-8 JSONL and create a job from the file:
+
+```python
+batch_input = client.upload_file("requests.jsonl", purpose="batch")
+job = client.create_batch(
+    "/v1/guardrails/prompt",
+    input_file_id=batch_input.id,
+    completion_window="24h",
+    idempotency_key="prompt-jsonl-2026-07-16",
+    metadata={"source": "nightly"},
+)
+```
+
+Each non-empty JSONL line must be an object such as:
+
+```json
+{"custom_id":"row-1","body":{"user_prompt":"Text to check"}}
+```
+
+Media batches accept HTTPS URLs or IDs returned from a
+`purpose="guardrail_media"` upload. Embedded base64 is intentionally rejected:
+
+```python
+media_file = client.upload_file("photo.png", purpose="guardrail_media")
+job = client.check_media_batch(
+    [
+        "https://cdn.example.com/photo-1.png",
+        {"custom_id": "photo-2", "file_id": media_file.id},
+    ],
+    idempotency_key="media-review-2026-07-16",
+)
+```
+
+Use `list_batch_results()` / `get_batch_results()` for cursor-paginated JSON,
+or `download_batch_results()` and `iter_batch_results()` for NDJSON. Jobs can
+be listed, retrieved, cancelled, and deleted with `list_batches()`,
+`retrieve_batch()`, `cancel_batch()`, and `delete_batch()`; only terminal jobs
+can be deleted. The async client exposes matching `await`/async-iteration
+methods.
+
+Server limits are 1,000 requests and 10 MiB for inline jobs, or 50,000 lines
+and 200 MiB for JSONL input. The completion window is exactly `24h`, and
+result artifacts expire after seven days.
+
 ## Policies are required
 
 The Guardrails API needs at least one policy to check against. Either
@@ -145,6 +228,8 @@ Runnable scripts live in [`examples/`](https://github.com/AetherLabCo/aetherlab-
 
 - [`check_prompt.py`](https://github.com/AetherLabCo/aetherlab-community/blob/main/examples/check_prompt.py) — basic prompt checking with policies
 - [`check_prompt_async.py`](https://github.com/AetherLabCo/aetherlab-community/blob/main/examples/check_prompt_async.py) — the same, using the async client
+- [`batch_prompt.py`](https://github.com/AetherLabCo/aetherlab-community/blob/main/examples/batch_prompt.py) — server-side prompt submission and NDJSON results
+- [`batch_media_async.py`](https://github.com/AetherLabCo/aetherlab-community/blob/main/examples/batch_media_async.py) — async media batch with URL/file-ID inputs
 - [`error_handling.py`](https://github.com/AetherLabCo/aetherlab-community/blob/main/examples/error_handling.py) — handling every error class
 
 Each reads `AETHERLAB_API_KEY` from the environment.

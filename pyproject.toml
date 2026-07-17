@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "aetherlab"
-version = "0.4.1"
+version = "0.5.0"
 description = "Official AetherLab Python SDK - AI guardrails, LLM safety, and content moderation via the AetherLab compliance API."
 readme = "README.md"
 license = "MIT"
@@ -70,8 +70,10 @@ packages = ["src/aetherlab"]
 include = [
     "src/aetherlab",
     "tests",
+    "examples",
     "README.md",
     "CHANGELOG.md",
+    "RELEASE_NOTES.md",
     "LICENSE",
 ]
 

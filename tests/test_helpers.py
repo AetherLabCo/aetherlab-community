@@ -1,12 +1,16 @@
 """Unit tests for internal helpers."""
 
+import httpx
+import pytest
 
 from aetherlab._http import (
     backoff_delay,
     build_prompt_payload,
     join_keywords,
     parse_retry_after,
+    raise_for_response,
 )
+from aetherlab.exceptions import APIError
 
 
 def test_join_keywords():
@@ -59,6 +63,23 @@ def test_backoff_delay_bounds():
 
 def test_backoff_respects_retry_after():
     assert backoff_delay(1, retry_after=5.0) >= 5.0
+
+
+def test_nested_batch_error_preserves_code_and_message():
+    response = httpx.Response(
+        409,
+        json={
+            "error": {
+                "type": "invalid_request_error",
+                "code": "idempotency_conflict",
+                "message": "Idempotency key already used.",
+            }
+        },
+    )
+    with pytest.raises(APIError) as exc:
+        raise_for_response(response)
+    assert exc.value.error_code == "idempotency_conflict"
+    assert "Idempotency key already used." in str(exc.value)
 
 
 def test_version_is_single_sourced():
