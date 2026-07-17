@@ -363,8 +363,16 @@ def build_prompt_batch_requests(
     requests: list[dict[str, Any]] = []
     for index, item in enumerate(items):
         custom_id, item_body = _item_parts(item, index=index, kind="prompt")
-        if "prompt" in item_body and "user_prompt" not in item_body:
-            item_body["user_prompt"] = item_body.pop("prompt")
+        prompt_keys = [
+            key for key in ("input", "prompt", "user_prompt") if key in item_body
+        ]
+        if len(prompt_keys) > 1:
+            raise ValueError(
+                f"prompt batch item {index} must provide exactly one of "
+                "input, prompt, or user_prompt"
+            )
+        if prompt_keys and prompt_keys[0] != "user_prompt":
+            item_body["user_prompt"] = item_body.pop(prompt_keys[0])
         body = {**defaults, **item_body}
         requests.append(
             {

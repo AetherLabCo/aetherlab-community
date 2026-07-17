@@ -407,6 +407,37 @@ def test_simplest_prompt_batch_call_is_stable_and_uses_facade(client):
 
 
 @respx.mock
+def test_prompt_convenience_accepts_documented_input_alias(client):
+    route = respx.post(f"{BASE}/v1/guardrails/prompt/batches").mock(
+        return_value=httpx.Response(201, json=batch_payload())
+    )
+
+    client.check_prompt_batch(
+        [
+            {
+                "custom_id": "documented-input",
+                "input": "Review this mapped prompt.",
+                "reasoning_mode": "high",
+            }
+        ]
+    )
+
+    body = json.loads(route.calls.last.request.content)
+    assert body["items"] == [
+        {
+            "custom_id": "documented-input",
+            "input": "Review this mapped prompt.",
+            "reasoning_mode": "high",
+        }
+    ]
+    with pytest.raises(ValueError, match="exactly one"):
+        client.check_prompt_batch(
+            [{"input": "first source", "prompt": "second source"}]
+        )
+    assert route.call_count == 1
+
+
+@respx.mock
 def test_media_convenience_accepts_https_and_file_ids_only(client):
     route = respx.post(f"{BASE}/v1/guardrails/media/batches").mock(
         return_value=httpx.Response(
