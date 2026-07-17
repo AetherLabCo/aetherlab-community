@@ -10,6 +10,7 @@ from typing import Any, cast
 from .exceptions import APIError
 from .models import (
     BatchEndpoint,
+    BatchFile,
     BatchJob,
     BatchResultItem,
     BatchResultsPage,
@@ -79,6 +80,21 @@ def validate_idempotency_key(value: object) -> str:
     if not value.strip():
         raise ValueError("idempotency_key must be a non-empty string")
     return value
+
+
+def stable_facade_idempotency_key(
+    endpoint: BatchEndpoint,
+    payload: Mapping[str, Any],
+) -> str:
+    """Derive one retry key from the exact convenience submission."""
+    digest = hashlib.sha256(
+        _json_bytes(
+            {"endpoint": endpoint, "payload": payload},
+            name="guardrail batch submission",
+        )
+    ).hexdigest()
+    kind = "prompt" if endpoint.endswith("/prompt") else "media"
+    return f"aetherlab-{kind}-{digest[:32]}"
 
 
 def _json_bytes(value: Any, *, name: str) -> bytes:
@@ -300,11 +316,19 @@ def _stable_custom_id(prefix: str, body: Mapping[str, Any], index: int) -> str:
 
 
 def _item_parts(
-    item: str | Mapping[str, Any],
+    item: str | BatchFile | Mapping[str, Any],
     *,
     index: int,
     kind: str,
 ) -> tuple[str | None, dict[str, Any]]:
+    if isinstance(item, BatchFile):
+        if kind != "media":
+            raise TypeError("uploaded batch files are only valid media batch items")
+        if item.purpose != "guardrail_media":
+            raise ValueError(
+                "media BatchFile items must have purpose='guardrail_media'"
+            )
+        return None, {"input_type": "file", "file_id": item.id}
     if isinstance(item, str):
         if kind == "prompt":
             return None, {"user_prompt": item}
@@ -352,7 +376,7 @@ def build_prompt_batch_requests(
 
 
 def build_media_batch_requests(
-    items: Iterable[str | Mapping[str, Any]],
+    items: Iterable[str | BatchFile | Mapping[str, Any]],
     *,
     defaults: Mapping[str, Any],
 ) -> list[dict[str, Any]]:
@@ -378,6 +402,58 @@ def build_media_batch_requests(
             }
         )
     return requests
+
+
+def build_guardrail_facade_payload(
+    endpoint: BatchEndpoint,
+    requests: Iterable[Mapping[str, Any]],
+    *,
+    settings: Mapping[str, Any],
+    metadata: Mapping[str, Any] | None,
+) -> dict[str, Any]:
+    """Build the small guardrail-specific request while retaining overrides."""
+    normalized = normalize_batch_requests(endpoint, requests)
+    shared = dict(settings)
+    _json_bytes(shared, name="settings")
+    items: list[dict[str, Any]] = []
+
+    for request in normalized:
+        body = dict(request["body"])
+        item: dict[str, Any] = {"custom_id": request["custom_id"]}
+        if endpoint == "/v1/guardrails/prompt":
+            item["input"] = body.pop("user_prompt")
+        else:
+            url, file_id = _media_reference(body)
+            if (url is None) == (file_id is None):
+                raise ValueError(
+                    "media batch body requires exactly one HTTPS URL or uploaded file_id"
+                )
+            if url is not None:
+                item["url"] = url
+            else:
+                item["file_id"] = file_id
+            for key in _MEDIA_KEYS:
+                body.pop(key, None)
+
+        for key, value in body.items():
+            if key not in shared or shared[key] != value:
+                item[key] = value
+        items.append(item)
+
+    payload: dict[str, Any] = {"items": items}
+    if shared:
+        payload["settings"] = shared
+    if metadata is not None:
+        if not isinstance(metadata, Mapping):
+            raise TypeError("metadata must be a mapping")
+        metadata_copy = dict(metadata)
+        _json_bytes(metadata_copy, name="metadata")
+        payload["metadata"] = metadata_copy
+    if len(_json_bytes(payload, name="guardrail batch payload")) > MAX_INLINE_BYTES:
+        raise ValueError(
+            f"inline batch payloads are limited to {MAX_INLINE_BYTES} bytes"
+        )
+    return payload
 
 
 def parse_batch_list(response: dict[str, Any]) -> list[BatchJob]:

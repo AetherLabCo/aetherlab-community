@@ -86,7 +86,15 @@ print(result.compliance_status)
 
 Version 0.5.0 adds server-side prompt and media jobs. Batch helpers submit one
 job and return a `BatchJob`; they do not fan out into repeated `check_prompt`
-or `check_media` calls.
+or `check_media` calls. The recommended PromptGuard call is exactly:
+
+```python
+job = client.check_prompt_batch(["first", "second"])
+```
+
+The SDK uses `POST /v1/guardrails/prompt/batches`, where the endpoint and
+24-hour window are implicit. Shared settings and per-item overrides remain
+available without changing the simple case:
 
 ```python
 job = client.check_prompt_batch(
@@ -94,13 +102,10 @@ job = client.check_prompt_batch(
         "A normal support message",
         {
             "custom_id": "ticket-42",
-            "body": {
-                "user_prompt": "A per-item prompt",
-                "reasoning_mode": "high",
-            },
+            "input": "A per-item prompt",
+            "reasoning_mode": "high",
         },
     ],
-    idempotency_key="support-review-2026-07-16",
     blacklisted_keywords=["violence", "weapons"],
     defaults={"risk_tolerance": "medium"},
     metadata={"dataset": "support-review"},
@@ -115,13 +120,21 @@ for item in client.iter_batch_results(job.id):
         print(item.custom_id, item.error)
 ```
 
-Each inline request has a unique `custom_id` and `body`. The convenience
-methods accept explicit IDs as shown above and generate deterministic IDs only
-when an item omits one. Shared defaults are merged first and each item's body
-wins on conflicts. `"Compliant"` and `"Non-Compliant"` are both successful
-guardrail results; transport or validation failures use an item failure state.
+The convenience methods generate deterministic item `custom_id` values and a
+stable payload-derived idempotency key when omitted. This makes retrying the
+same logical SDK call safe, including after an uncertain network response.
+Pass your own `custom_id` values to join unordered results directly to your
+records. Pass a stable `idempotency_key` to coordinate retries with another
+system, or a new unique key when you intentionally want to resubmit an
+identical payload as a new job.
 
-For larger datasets, upload UTF-8 JSONL and create a job from the file:
+Shared defaults are merged first and each item's fields win on conflicts.
+`"Compliant"` and `"Non-Compliant"` are both successful guardrail results;
+transport or validation failures use an item failure state.
+
+The generic `create_batch()` resource method is preserved for advanced,
+provider-compatible inline or JSONL workflows. For larger datasets, upload
+UTF-8 JSONL and create a job from the file:
 
 ```python
 batch_input = client.upload_file("requests.jsonl", purpose="batch")
@@ -141,16 +154,17 @@ Each non-empty JSONL line must be an object such as:
 ```
 
 Media batches accept HTTPS URLs or IDs returned from a
-`purpose="guardrail_media"` upload. Embedded base64 is intentionally rejected:
+`purpose="guardrail_media"` upload. The returned `BatchFile` object itself is
+also accepted. Embedded base64 is intentionally rejected:
 
 ```python
 media_file = client.upload_file("photo.png", purpose="guardrail_media")
 job = client.check_media_batch(
     [
         "https://cdn.example.com/photo-1.png",
-        {"custom_id": "photo-2", "file_id": media_file.id},
+        media_file,
+        {"custom_id": "photo-3", "file_id": media_file.id},
     ],
-    idempotency_key="media-review-2026-07-16",
 )
 ```
 

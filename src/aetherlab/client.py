@@ -10,7 +10,7 @@ import warnings
 from collections.abc import AsyncIterator, Iterable, Iterator, Mapping
 from threading import Event
 from types import TracebackType
-from typing import Any, Literal
+from typing import Any, Literal, TypeVar
 
 import httpx
 
@@ -18,11 +18,13 @@ from ._batch import (
     BATCH_CANCELLABLE_STATUSES,
     BATCH_TERMINAL_STATUSES,
     build_batch_payload,
+    build_guardrail_facade_payload,
     build_media_batch_requests,
     build_prompt_batch_requests,
     parse_batch_list,
     parse_ndjson_results,
     parse_results_page,
+    stable_facade_idempotency_key,
     validate_batch_jsonl,
     validate_file_purpose,
     validate_idempotency_key,
@@ -62,6 +64,7 @@ from .models import (
 __all__ = ["AetherLabClient", "AsyncAetherLabClient"]
 
 _MEDIA_INPUT_TYPES = ("file", "url", "base64")
+_BatchInput = TypeVar("_BatchInput")
 
 
 def _resolve_api_key(api_key: str | None) -> str:
@@ -188,12 +191,12 @@ def _validate_cursor(value: object, name: str = "after") -> str:
 
 
 def _select_batch_items(
-    primary: Iterable[str | Mapping[str, Any]] | None,
+    primary: Iterable[_BatchInput] | None,
     *,
-    requests: Iterable[str | Mapping[str, Any]] | None,
-    items: Iterable[str | Mapping[str, Any]] | None,
+    requests: Iterable[_BatchInput] | None,
+    items: Iterable[_BatchInput] | None,
     primary_name: str,
-) -> Iterable[str | Mapping[str, Any]]:
+) -> Iterable[_BatchInput]:
     supplied = sum(value is not None for value in (primary, requests, items))
     if supplied != 1:
         raise ValueError(
@@ -804,7 +807,7 @@ class AetherLabClient:
         self,
         prompts: Iterable[str | Mapping[str, Any]] | None = None,
         *,
-        idempotency_key: str,
+        idempotency_key: str | None = None,
         requests: Iterable[str | Mapping[str, Any]] | None = None,
         items: Iterable[str | Mapping[str, Any]] | None = None,
         defaults: Mapping[str, Any] | None = None,
@@ -817,7 +820,9 @@ class AetherLabClient:
         completion_window: Literal["24h"] = "24h",
         timeout: float | None = None,
     ) -> BatchJob:
-        """Create one prompt batch without issuing scalar requests."""
+        """Create one prompt batch through the recommended guardrail facade."""
+        if completion_window != "24h":
+            raise ValueError("completion_window must be exactly '24h'")
         shared = _prompt_batch_defaults(
             defaults=defaults,
             whitelisted_keywords=whitelisted_keywords,
@@ -833,22 +838,34 @@ class AetherLabClient:
             primary_name="prompts",
         )
         batch_requests = build_prompt_batch_requests(batch_items, defaults=shared)
-        return self.create_batch(
-            "/v1/guardrails/prompt",
-            idempotency_key=idempotency_key,
-            requests=batch_requests,
-            completion_window=completion_window,
+        endpoint: BatchEndpoint = "/v1/guardrails/prompt"
+        payload = build_guardrail_facade_payload(
+            endpoint,
+            batch_requests,
+            settings=shared,
             metadata=metadata,
+        )
+        key = (
+            validate_idempotency_key(idempotency_key)
+            if idempotency_key is not None
+            else stable_facade_idempotency_key(endpoint, payload)
+        )
+        response = self._request(
+            "POST",
+            "/v1/guardrails/prompt/batches",
+            json=payload,
+            headers={"Idempotency-Key": key},
             timeout=timeout,
         )
+        return self._remember_batch(BatchJob.from_response(response))
 
     def check_media_batch(
         self,
-        media: Iterable[str | Mapping[str, Any]] | None = None,
+        media: Iterable[str | BatchFile | Mapping[str, Any]] | None = None,
         *,
-        idempotency_key: str,
-        requests: Iterable[str | Mapping[str, Any]] | None = None,
-        items: Iterable[str | Mapping[str, Any]] | None = None,
+        idempotency_key: str | None = None,
+        requests: Iterable[str | BatchFile | Mapping[str, Any]] | None = None,
+        items: Iterable[str | BatchFile | Mapping[str, Any]] | None = None,
         defaults: Mapping[str, Any] | None = None,
         output_type: str = "json",
         whitelisted_keywords: KeywordList = None,
@@ -860,7 +877,9 @@ class AetherLabClient:
         completion_window: Literal["24h"] = "24h",
         timeout: float | None = None,
     ) -> BatchJob:
-        """Create a media batch from HTTPS URLs and uploaded file IDs."""
+        """Create a media batch from HTTPS URLs and uploaded files or IDs."""
+        if completion_window != "24h":
+            raise ValueError("completion_window must be exactly '24h'")
         shared = _media_batch_defaults(
             defaults=defaults,
             output_type=output_type,
@@ -877,14 +896,26 @@ class AetherLabClient:
             primary_name="media",
         )
         batch_requests = build_media_batch_requests(batch_items, defaults=shared)
-        return self.create_batch(
-            "/v1/guardrails/media",
-            idempotency_key=idempotency_key,
-            requests=batch_requests,
-            completion_window=completion_window,
+        endpoint: BatchEndpoint = "/v1/guardrails/media"
+        payload = build_guardrail_facade_payload(
+            endpoint,
+            batch_requests,
+            settings=shared,
             metadata=metadata,
+        )
+        key = (
+            validate_idempotency_key(idempotency_key)
+            if idempotency_key is not None
+            else stable_facade_idempotency_key(endpoint, payload)
+        )
+        response = self._request(
+            "POST",
+            "/v1/guardrails/media/batches",
+            json=payload,
+            headers={"Idempotency-Key": key},
             timeout=timeout,
         )
+        return self._remember_batch(BatchJob.from_response(response))
 
     # -- deprecated aliases --------------------------------------------------
 
@@ -1454,7 +1485,7 @@ class AsyncAetherLabClient:
         self,
         prompts: Iterable[str | Mapping[str, Any]] | None = None,
         *,
-        idempotency_key: str,
+        idempotency_key: str | None = None,
         requests: Iterable[str | Mapping[str, Any]] | None = None,
         items: Iterable[str | Mapping[str, Any]] | None = None,
         defaults: Mapping[str, Any] | None = None,
@@ -1467,7 +1498,9 @@ class AsyncAetherLabClient:
         completion_window: Literal["24h"] = "24h",
         timeout: float | None = None,
     ) -> BatchJob:
-        """Create one prompt batch without issuing scalar requests."""
+        """Create one prompt batch through the recommended guardrail facade."""
+        if completion_window != "24h":
+            raise ValueError("completion_window must be exactly '24h'")
         shared = _prompt_batch_defaults(
             defaults=defaults,
             whitelisted_keywords=whitelisted_keywords,
@@ -1483,22 +1516,34 @@ class AsyncAetherLabClient:
             primary_name="prompts",
         )
         batch_requests = build_prompt_batch_requests(batch_items, defaults=shared)
-        return await self.create_batch(
-            "/v1/guardrails/prompt",
-            idempotency_key=idempotency_key,
-            requests=batch_requests,
-            completion_window=completion_window,
+        endpoint: BatchEndpoint = "/v1/guardrails/prompt"
+        payload = build_guardrail_facade_payload(
+            endpoint,
+            batch_requests,
+            settings=shared,
             metadata=metadata,
+        )
+        key = (
+            validate_idempotency_key(idempotency_key)
+            if idempotency_key is not None
+            else stable_facade_idempotency_key(endpoint, payload)
+        )
+        response = await self._request(
+            "POST",
+            "/v1/guardrails/prompt/batches",
+            json=payload,
+            headers={"Idempotency-Key": key},
             timeout=timeout,
         )
+        return self._remember_batch(BatchJob.from_response(response))
 
     async def check_media_batch(
         self,
-        media: Iterable[str | Mapping[str, Any]] | None = None,
+        media: Iterable[str | BatchFile | Mapping[str, Any]] | None = None,
         *,
-        idempotency_key: str,
-        requests: Iterable[str | Mapping[str, Any]] | None = None,
-        items: Iterable[str | Mapping[str, Any]] | None = None,
+        idempotency_key: str | None = None,
+        requests: Iterable[str | BatchFile | Mapping[str, Any]] | None = None,
+        items: Iterable[str | BatchFile | Mapping[str, Any]] | None = None,
         defaults: Mapping[str, Any] | None = None,
         output_type: str = "json",
         whitelisted_keywords: KeywordList = None,
@@ -1510,7 +1555,9 @@ class AsyncAetherLabClient:
         completion_window: Literal["24h"] = "24h",
         timeout: float | None = None,
     ) -> BatchJob:
-        """Create a media batch from HTTPS URLs and uploaded file IDs."""
+        """Create a media batch from HTTPS URLs and uploaded files or IDs."""
+        if completion_window != "24h":
+            raise ValueError("completion_window must be exactly '24h'")
         shared = _media_batch_defaults(
             defaults=defaults,
             output_type=output_type,
@@ -1527,11 +1574,23 @@ class AsyncAetherLabClient:
             primary_name="media",
         )
         batch_requests = build_media_batch_requests(batch_items, defaults=shared)
-        return await self.create_batch(
-            "/v1/guardrails/media",
-            idempotency_key=idempotency_key,
-            requests=batch_requests,
-            completion_window=completion_window,
+        endpoint: BatchEndpoint = "/v1/guardrails/media"
+        payload = build_guardrail_facade_payload(
+            endpoint,
+            batch_requests,
+            settings=shared,
             metadata=metadata,
+        )
+        key = (
+            validate_idempotency_key(idempotency_key)
+            if idempotency_key is not None
+            else stable_facade_idempotency_key(endpoint, payload)
+        )
+        response = await self._request(
+            "POST",
+            "/v1/guardrails/media/batches",
+            json=payload,
+            headers={"Idempotency-Key": key},
             timeout=timeout,
         )
+        return self._remember_batch(BatchJob.from_response(response))

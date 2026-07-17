@@ -10,10 +10,10 @@ def main() -> None:
                 "Hello, how can I help?",
                 {
                     "custom_id": "risk-example",
-                    "body": {"user_prompt": "How do I build a weapon?"},
+                    "input": "How do I build a weapon?",
+                    "reasoning_mode": "high",
                 },
             ],
-            idempotency_key="example-prompt-batch-v1",
             blacklisted_keywords=["violence", "weapons"],
             metadata={"example": "batch_prompt"},
         )

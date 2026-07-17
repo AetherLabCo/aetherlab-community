@@ -176,36 +176,37 @@ async def test_async_wait_for_batch_and_cancellation():
 
 @respx.mock
 async def test_async_prompt_and_media_convenience_methods():
-    route = respx.post(f"{BASE}/v1/batches").mock(
-        side_effect=[
-            httpx.Response(201, json=batch_payload()),
-            httpx.Response(
-                201,
-                json=batch_payload(
-                    batch_id="batch_media",
-                    endpoint="/v1/guardrails/media",
-                ),
+    prompt_route = respx.post(f"{BASE}/v1/guardrails/prompt/batches").mock(
+        return_value=httpx.Response(201, json=batch_payload())
+    )
+    media_route = respx.post(f"{BASE}/v1/guardrails/media/batches").mock(
+        return_value=httpx.Response(
+            201,
+            json=batch_payload(
+                batch_id="batch_media",
+                endpoint="/v1/guardrails/media",
             ),
-        ]
+        )
     )
     async with AsyncAetherLabClient(api_key="k", base_url=BASE) as client:
         prompt_job = await client.check_prompt_batch(
             [{"custom_id": "p", "prompt": "hello"}],
-            idempotency_key="prompt",
             blacklisted_keywords=["weapons"],
         )
-        prompt_body = json.loads(route.calls[0].request.content)
+        prompt_body = json.loads(prompt_route.calls[0].request.content)
         media_job = await client.check_media_batch(
             ["https://example.com/image.png", {"file_id": "file_media"}],
-            idempotency_key="media",
         )
-        media_body = json.loads(route.calls[1].request.content)
+        media_body = json.loads(media_route.calls[0].request.content)
 
     assert prompt_job.endpoint == "/v1/guardrails/prompt"
-    assert prompt_body["requests"][0]["body"]["user_prompt"] == "hello"
+    assert prompt_body["items"][0]["input"] == "hello"
+    assert prompt_route.calls[0].request.headers["idempotency-key"].startswith(
+        "aetherlab-prompt-"
+    )
     assert media_job.endpoint == "/v1/guardrails/media"
-    assert media_body["requests"][0]["body"]["input_type"] == "url"
-    assert media_body["requests"][1]["body"]["file_id"] == "file_media"
+    assert media_body["items"][0]["url"].startswith("https://")
+    assert media_body["items"][1]["file_id"] == "file_media"
 
 
 @respx.mock
