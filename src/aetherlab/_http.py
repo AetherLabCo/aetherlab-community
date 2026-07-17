@@ -77,6 +77,7 @@ def build_media_form(
     output_type: str = "json",
     whitelisted_keywords: KeywordList = None,
     blacklisted_keywords: KeywordList = None,
+    industry: str | None = None,
     reasoning_mode: str | None = None,
     risk_tolerance: str | None = None,
     environment: str | None = None,
@@ -88,6 +89,8 @@ def build_media_form(
         form["whitelisted_keyword"] = whitelist
     if blacklist is not None:
         form["blacklisted_keyword"] = blacklist
+    if industry is not None:
+        form["industry"] = industry
     if reasoning_mode is not None:
         form["reasoning_mode"] = reasoning_mode
     if risk_tolerance is not None:

@@ -64,6 +64,23 @@ async def test_async_check_media():
 
 
 @respx.mock
+async def test_async_check_media_sends_industry():
+    route = respx.post(f"{BASE}/v1/guardrails/media").mock(
+        return_value=httpx.Response(200, json=MEDIA_OK)
+    )
+    async with AsyncAetherLabClient(api_key="k", base_url=BASE) as client:
+        result = await client.check_media(
+            "https://example.com/cat.png",
+            input_type="url",
+            industry="nsfw",
+        )
+    assert result.is_compliant is True
+    body = route.calls.last.request.read()
+    assert b'name="industry"' in body
+    assert b"nsfw" in body
+
+
+@respx.mock
 async def test_async_error_mapping():
     respx.post(f"{BASE}/v1/guardrails/prompt").mock(
         side_effect=[
